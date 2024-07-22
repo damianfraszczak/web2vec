@@ -1,0 +1,13 @@
+scrapy~=2.11.2
+Twisted~=24.3.0
+networkx
+beautifulsoup4
+matplotlib
+scipy
+python-whois
+dnspython
+geoip2
+tldextract
+selenium
+webdriver-manager
+dnspython
