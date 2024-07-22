@@ -2,10 +2,12 @@ import socket
 import ssl
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Tuple, Dict, Any
+from typing import Any, Dict, Tuple
 
 import idna
 import requests
+
+from web2vec.config import config
 
 
 @dataclass
@@ -24,7 +26,7 @@ def get_tls_certificate(hostname: str, port: int = 443) -> Dict[str, Any]:
     """Retrieve the TLS certificate for a given hostname and port."""
     context = ssl.create_default_context()
 
-    hostname_idna = idna.encode(hostname).decode('ascii')
+    hostname_idna = idna.encode(hostname).decode("ascii")
 
     with socket.create_connection((hostname_idna, port)) as sock:
         with context.wrap_socket(sock, server_hostname=hostname_idna) as ssock:
@@ -39,13 +41,16 @@ def is_certificate_valid(cert: Dict[str, Any]) -> Tuple[bool, str]:
 
     current_date = datetime.utcnow()
 
-    not_before = datetime.strptime(cert['notBefore'], "%b %d %H:%M:%S %Y %Z")
-    not_after = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
+    not_before = datetime.strptime(cert["notBefore"], "%b %d %H:%M:%S %Y %Z")
+    not_after = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z")
 
     if not_before <= current_date <= not_after:
         return True, "Certificate is valid"
     else:
-        return False, f"Certificate is not valid: notBefore={not_before}, notAfter={not_after}"
+        return (
+            False,
+            f"Certificate is not valid: notBefore={not_before}, notAfter={not_after}",
+        )
 
 
 def is_certificate_trusted(cert: Dict[str, Any]) -> Tuple[bool, str]:
@@ -55,9 +60,9 @@ def is_certificate_trusted(cert: Dict[str, Any]) -> Tuple[bool, str]:
     try:
         context.verify_mode = ssl.CERT_REQUIRED
         context.check_hostname = False
-        ca_certs = context.get_ca_certs(binary_form=True)
+        ca_certs = context.get_ca_certs(binary_form=True)  # noqa
 
-        store = context.cert_store_stats()
+        store = context.cert_store_stats()  # noqa
         return True, "Certificate is signed by a trusted CA"
     except ssl.SSLError as e:
         return False, f"Certificate is not trusted: {e}"
@@ -66,9 +71,9 @@ def is_certificate_trusted(cert: Dict[str, Any]) -> Tuple[bool, str]:
 def check_ssl(url: str) -> bool:
     """Check if the SSL certificate of the URL is valid."""
     try:
-        requests.get(url, verify=True, timeout=3)
+        requests.get(url, verify=True, timeout=config.api_timeout)
         return True
-    except Exception:
+    except Exception:  # noqa
         return False
 
 
@@ -80,18 +85,18 @@ def get_certificate_features(hostname: str) -> CertificateFeatures:
         is_valid, validity_message = is_certificate_valid(cert)
         is_trusted, trust_message = is_certificate_trusted(cert)
 
-        not_before = datetime.strptime(cert['notBefore'], "%b %d %H:%M:%S %Y %Z")
-        not_after = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
+        not_before = datetime.strptime(cert["notBefore"], "%b %d %H:%M:%S %Y %Z")
+        not_after = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z")
 
         return CertificateFeatures(
-            subject=cert.get('subject', {}),
-            issuer=cert.get('issuer', {}),
+            subject=cert.get("subject", {}),
+            issuer=cert.get("issuer", {}),
             not_before=not_before,
             not_after=not_after,
             is_valid=is_valid,
             validity_message=validity_message,
             is_trusted=is_trusted,
-            trust_message=trust_message
+            trust_message=trust_message,
         )
     else:
         return CertificateFeatures(
@@ -102,14 +107,15 @@ def get_certificate_features(hostname: str) -> CertificateFeatures:
             is_valid=False,
             validity_message="No certificate found",
             is_trusted=False,
-            trust_message="No certificate found"
+            trust_message="No certificate found",
         )
+
 
 if __name__ == "__main__":
     hostname = "www.example.com"
     cert_info = get_certificate_features(hostname)
 
-    print(f"Certificate for {hostname}:")
+    print(f"Certificate for {hostname}")
     print(f"Subject: {cert_info.subject}")
     print(f"Issuer: {cert_info.issuer}")
     print(f"Validity: {cert_info.validity_message}")
