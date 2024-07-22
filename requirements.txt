@@ -12,3 +12,4 @@ selenium
 webdriver-manager
 dnspython
 pydantic
+pydantic_settings
