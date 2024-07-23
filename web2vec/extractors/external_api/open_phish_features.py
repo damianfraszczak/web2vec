@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class OpenPhishFeatures:
+    """Dataclass for OpenPhish features."""
+
     is_phishing: bool
 
 
@@ -30,10 +32,12 @@ def get_open_phish_features(url: str) -> OpenPhishFeatures:
         logger.error(f"Error fetching OpenPhish feed: {e}", e)
         return OpenPhishFeatures(is_phishing=False)
 
+
 @cache
 def get_open_phish_features_cached(url: str) -> OpenPhishFeatures:
     """Get the OpenPhish features for the given URL."""
     return get_open_phish_features(url)
+
 
 if __name__ == "__main__":
     url = "http://www.example.com"

@@ -1,6 +1,6 @@
 import csv
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from functools import cache
 from io import StringIO
 from typing import Generator, Optional
@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class URLHausFeatures:
+    """Dataclass for URLHaus features."""
+
     id: str
     date_added: str
     url: str

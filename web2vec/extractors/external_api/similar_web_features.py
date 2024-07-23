@@ -53,6 +53,8 @@ class TopKeyword:
 
 @dataclass
 class SimilarWebFeatures:
+    """Dataclass for SimilarWeb features."""
+
     Version: int
     SiteName: str
     Description: str
@@ -136,10 +138,12 @@ def get_similar_web_features(domain: str) -> Optional[SimilarWebFeatures]:
         logger.error(f"Error fetching data: {e}", e)
         return None
 
+
 @cache
 def get_similar_web_features_cached(domain: str) -> Optional[SimilarWebFeatures]:
     """Get the SimilarWeb features for the given domain."""
     return get_similar_web_features(domain)
+
 
 if __name__ == "__main__":
     domain_to_check = "down.pcclear.com"

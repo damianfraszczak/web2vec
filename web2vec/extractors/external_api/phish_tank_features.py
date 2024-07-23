@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PhishTankFeatures:
+    """Dataclass for PhishTank features."""
+
     phish_id: str
     url: str
     phish_detail_url: str

@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class GoogleIndexFeatures:
+    """Dataclass for Google index features."""
+
     is_indexed: Optional[bool]
     position: Optional[int] = None
 
@@ -23,7 +25,7 @@ class GoogleIndexFeatures:
 def get_google_index_features(url: str) -> GoogleIndexFeatures:
     """Check if the given URL is indexed by Google and return its position."""
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run headless Chrome
+    chrome_options.add_argument("--headless")
 
     driver = webdriver.Chrome(
         service=Service(ChromeDriverManager().install()), options=chrome_options
@@ -49,10 +51,12 @@ def get_google_index_features(url: str) -> GoogleIndexFeatures:
         driver.quit()
         return GoogleIndexFeatures(is_indexed=None, position=None)
 
+
 @cache
 def get_google_index_features_cached(url: str) -> GoogleIndexFeatures:
     """Get the Google index features for the given URL."""
     return get_google_index_features(url)
+
 
 if __name__ == "__main__":
     url = "wp.pl"

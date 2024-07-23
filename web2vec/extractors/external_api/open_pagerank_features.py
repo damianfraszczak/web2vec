@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class OpenPageRankFeatures:
+    """Dataclass for Open PageRank features."""
+
     domain: str
     page_rank_decimal: Optional[float]
     updated_date: Optional[str]
