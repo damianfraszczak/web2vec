@@ -344,28 +344,26 @@ import os
 
 from scrapy.crawler import CrawlerProcess
 
-from src.web2vec.config import config
-from src.web2vec.crawlers.extractors import ALL_EXTRACTORS
-from src.web2vec.crawlers.spiders import Web2VecSpider
+import web2vec as w2v
 
 process = CrawlerProcess(
     settings={
         "FEEDS": {
-            os.path.join(config.crawler_output_path, "output.json"): {
+            os.path.join(w2v.config.crawler_output_path, "output.json"): {
                 "format": "json",
                 "encoding": "utf8",
             }
         },
-        "DEPTH_LIMIT": config.crawler_spider_depth_limit,
+        "DEPTH_LIMIT": 1,
         "LOG_LEVEL": "INFO",
     }
 )
 
 process.crawl(
-    Web2VecSpider,
+    w2v.Web2VecSpider,
     start_urls=["http://quotes.toscrape.com/"], # pages to process
     allowed_domains=["quotes.toscrape.com"], # domains to process for links
-    extractors=ALL_EXTRACTORS, # extractors to use
+    extractors=w2v.ALL_EXTRACTORS, # extractors to use
 )
 process.start()
 ```
