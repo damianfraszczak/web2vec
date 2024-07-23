@@ -6,7 +6,7 @@ from typing import Optional
 
 from requests import RequestException
 
-from web2vec.utils import fetch_file_from_url_and_read, get_domain_from_url
+from src.web2vec.utils import fetch_file_from_url_and_read, get_domain_from_url
 
 logger = logging.getLogger(__name__)
 

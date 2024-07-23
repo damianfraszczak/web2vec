@@ -5,7 +5,7 @@ from typing import List, Optional
 import requests
 from bs4 import BeautifulSoup
 
-from web2vec.config import config
+from src.web2vec.config import config
 
 logger = logging.getLogger(__name__)
 

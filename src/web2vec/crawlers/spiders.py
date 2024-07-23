@@ -5,9 +5,9 @@ from typing import Any
 import scrapy
 from scrapy.http import Response
 
-from web2vec.config import config
-from web2vec.crawlers.models import WebPage
-from web2vec.utils import sanitize_filename, store_json
+from src.web2vec.config import config
+from src.web2vec.crawlers.models import WebPage
+from src.web2vec.utils import sanitize_filename, store_json
 
 
 class Web2VecSpider(scrapy.Spider):

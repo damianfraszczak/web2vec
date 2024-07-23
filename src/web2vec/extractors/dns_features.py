@@ -5,7 +5,7 @@ from typing import List, Optional
 
 import dns.resolver
 
-from web2vec.utils import get_domain_from_url
+from src.web2vec.utils import get_domain_from_url
 
 logger = logging.getLogger(__name__)
 

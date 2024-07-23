@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, urlparse
 
 import tldextract
 
-from web2vec.utils import entropy, fetch_file_from_url_and_read, valid_ip
+from src.web2vec.utils import entropy, fetch_file_from_url_and_read, valid_ip
 
 shortening_services = (
     r"bit\.ly|goo\.gl|shorte\.st|go2l\.ink|x\.co|ow\.ly|t\.co|tinyurl|tr\.im|is\.gd|cli\.gs|"

@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from web2vec.utils import get_domain_from_url
+from src.web2vec.utils import get_domain_from_url
 
 
 @dataclass
