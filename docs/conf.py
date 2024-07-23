@@ -18,7 +18,7 @@ from netcenlib.version import __version__  # noqa
 now = datetime.datetime.now()
 
 
-project = "NetCenLib"
+project = "web2vec"
 author = "Damian Frąszczak, Edyta Frąszczak"
 copyright = f"{now.year}, {author}"
 release = __version__

@@ -5,6 +5,9 @@ from scrapy.crawler import CrawlerProcess
 from web2vec.config import config
 from web2vec.crawlers.extractors import ALL_EXTRACTORS
 from web2vec.crawlers.spiders import Web2VecSpider
+from web2vec.extractors.external_api.similar_web_features import (
+    get_similar_web_features,
+)
 
 
 def run_spider():
@@ -35,3 +38,7 @@ if __name__ == "__main__":
     run_spider()
     # G = build_graph(config.crawler_output_path)
     # visualize_graph_with_centrality(G)
+
+domain_to_check = "down.pcclear.com"
+entry = get_similar_web_features(domain_to_check)
+print(entry)
