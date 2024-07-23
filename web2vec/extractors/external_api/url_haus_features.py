@@ -1,6 +1,7 @@
 import csv
 import logging
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from functools import cache
 from io import StringIO
 from typing import Generator, Optional
 
@@ -13,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class URLHausFeatures:
+    """Dataclass for URLHaus features."""
+
     id: str
     date_added: str
     url: str
@@ -28,7 +31,7 @@ class URLHausFeatures:
         return get_domain_from_url(self.url)
 
 
-def get_urlhouse_features(domain: Optional[str] = None) -> Generator:
+def get_url_haus_features(domain: Optional[str] = None) -> Generator:
     """Get the url features for given domain."""
     urlhaus_url = "https://urlhaus.abuse.ch/downloads/csv_online/"
     try:
@@ -65,7 +68,13 @@ def get_urlhouse_features(domain: Optional[str] = None) -> Generator:
         return []
 
 
+@cache
+def get_url_haus_features_cached(domain: Optional[str] = None) -> URLHausFeatures:
+    """Get the URLHaus features for the given domain."""
+    return next(get_url_haus_features(domain), None)
+
+
 if __name__ == "__main__":
     domain_to_check = "down.pcclear.com"
-    entry = get_urlhouse_features(domain_to_check)
-    print(f"Entry found - {next(entry)}")
+    entry = get_url_haus_features_cached(domain_to_check)
+    print(f"Entry found - {asdict(entry)}")

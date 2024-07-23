@@ -1,16 +1,20 @@
 import json
 import logging
 from dataclasses import dataclass
+from functools import cache
+from typing import Optional
 
 from requests import RequestException
 
-from web2vec.utils import fetch_file_from_url, get_domain_from_url
+from web2vec.utils import fetch_file_from_url_and_read, get_domain_from_url
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class PhishTankFeatures:
+    """Dataclass for PhishTank features."""
+
     phish_id: str
     url: str
     phish_detail_url: str
@@ -25,18 +29,15 @@ class PhishTankFeatures:
         return get_domain_from_url(self.url)
 
 
-def get_phishtank_feed(domain=None):
+def get_phishtank_feed():
     """Get the PhishTank feed."""
     phishtank_url = "https://raw.githubusercontent.com/ProKn1fe/phishtank-database/master/online-valid.json"
     try:
-        json_text, _ = fetch_file_from_url(phishtank_url)
+        json_text = fetch_file_from_url_and_read(phishtank_url)
 
         entries_data = json.loads(json_text)
-        results = []
         for item in entries_data:
-            if domain and domain != item["url"]:
-                continue
-            entry = PhishTankFeatures(
+            yield PhishTankFeatures(
                 phish_id=item["phish_id"],
                 url=item["url"],
                 phish_detail_url=item["phish_detail_url"],
@@ -46,12 +47,25 @@ def get_phishtank_feed(domain=None):
                 online=item["online"],
                 target=item["target"],
             )
-            results.append(entry)
-        return results
 
     except RequestException as e:
         logger.error(f"Error fetching PhishTank feed: {e}", e)
-        return []
+        return None
+
+
+def get_phishtank_features(domain: str) -> Optional[PhishTankFeatures]:
+    """Get PhishTank features for the given domain."""
+    entries = get_phishtank_feed()
+    for entry in entries:
+        if entry.domain == domain:
+            return entry
+    return None
+
+
+@cache
+def get_phishtank_features_cached(domain: str) -> Optional[PhishTankFeatures]:
+    """Get PhishTank features for the given domain."""
+    return get_phishtank_features(domain)
 
 
 def check_phish_phishtank(domain: str) -> bool:
@@ -65,5 +79,5 @@ def check_phish_phishtank(domain: str) -> bool:
 
 if __name__ == "__main__":
     domain = "allegrolokalnie.kategorie-baseny93.pl"
-    is_phish = check_phish_phishtank(domain)
-    print(f"{domain} is phishing: {is_phish}")
+    entry = get_phishtank_features_cached(domain)
+    print(f"{domain} is phishing: {entry}")

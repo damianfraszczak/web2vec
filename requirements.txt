@@ -1,5 +1,5 @@
-scrapy~=2.11.2
-Twisted~=24.3.0
+scrapy
+Twisted
 networkx
 beautifulsoup4
 matplotlib
@@ -12,3 +12,4 @@ selenium
 webdriver-manager
 dnspython
 pydantic
+pydantic_settings

@@ -2,6 +2,7 @@ import socket
 import ssl
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cache
 from typing import Any, Dict, Tuple
 
 import idna
@@ -109,6 +110,12 @@ def get_certificate_features(hostname: str) -> CertificateFeatures:
             is_trusted=False,
             trust_message="No certificate found",
         )
+
+
+@cache
+def get_certificate_features_cached(hostname: str) -> CertificateFeatures:
+    """Get the certificate features for the given hostname."""
+    return get_certificate_features(hostname)
 
 
 if __name__ == "__main__":

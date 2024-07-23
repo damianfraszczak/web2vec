@@ -1,51 +1,37 @@
-import json
 import os.path
 import tempfile
 
-from pydantic import Field
-from pydantic.v1 import BaseSettings, root_validator
+from pydantic import field_validator
+from pydantic_core.core_schema import ValidationInfo
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DEFAULT_PATH = os.path.join(tempfile.gettempdir(), "web2vec")
 
 
 class Config(BaseSettings):
-    default_path: str = Field(env="WEB2VEC_DEFAULT_OUTPUT_PATH")
-    crawler_output_path: str = Field(env="WEB2VEC_DEFAULT_CRAWLER_OUTPUT_PATH")
-    remote_url_output_path: str = Field(env="WEB2VEC_DEFAULT_REMOTE_URL_PATH")
-    open_page_rank_api_key: str = Field(env="WEB2VEC_OPEN_PAGERANK_API_KEY", default="")
-    api_timeout: int = Field(env="WEB2VEC_API_TIMEOUT", default=60)
+    model_config = SettingsConfigDict(
+        env_prefix="WEB2VEC_", env_file=".env", env_file_encoding="utf-8"
+    )
 
-    @root_validator(pre=True)
-    def set_default_path(cls, values):
-        if not values.get("default_path"):
-            values["default_path"] = _DEFAULT_PATH
-        return values
+    default_output_path: str = _DEFAULT_PATH
+    remote_url_output_path: str = ""
+    open_page_rank_api_key: str = ""
+    api_timeout: int = 60
+    crawler_output_path: str = ""
+    crawler_spider_depth_limit: int = 5
 
-    @root_validator(pre=True)
-    def set_crawler_output_path(cls, values):
-        if not values.get("crawler_output_path"):
-            values["crawler_output_path"] = os.path.join(
-                values.get("default_path"), "crawler"
-            )
-        return values
-
-    @root_validator(pre=True)
-    def set_remote_url_output_path(cls, values):
-        if not values.get("remote_url_output_path"):
-            values["remote_url_output_path"] = os.path.join(
-                values.get("default_path"), "remote"
-            )
-        return values
-
+    @field_validator("remote_url_output_path", "crawler_output_path", mode="before")
     @classmethod
-    def from_json(cls, filepath: str):
-        with open(filepath, "r") as file:
-            data = json.load(file)
-        return cls(**data)
+    def set_correct_path(cls, value: str, info: ValidationInfo):
+        data = info.data
+        field_name = info.field_name
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+        if not value:
+            if field_name == "remote_url_output_path":
+                return os.path.join(data["default_output_path"], "remote")
+            if field_name == "crawler_output_path":
+                return os.path.join(data["default_output_path"], "crawler")
+        return value
 
 
-config = Config(open_page_rank_api_key="", api_timeout=60)
+config = Config()

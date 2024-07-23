@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from functools import cache
 from typing import Optional
 
 import requests
@@ -10,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class PageRankFeatures:
+class OpenPageRankFeatures:
+    """Dataclass for Open PageRank features."""
+
     domain: str
     page_rank_decimal: Optional[float]
     updated_date: Optional[str]
@@ -21,7 +24,10 @@ class OpenPageRankAPI:
         self.api_key = api_key
         self.base_url = "https://openpagerank.com/api/v1.0/getPageRank"
 
-    def get_open_page_rank_features(self, domain: str) -> Optional[PageRankFeatures]:
+    def get_open_page_rank_features(
+        self, domain: str
+    ) -> Optional[OpenPageRankFeatures]:
+        """Get Open PageRank features for the given domain."""
         headers = {"API-OPR": self.api_key}
         params = {"domains[]": domain}
         response = requests.get(
@@ -32,7 +38,7 @@ class OpenPageRankAPI:
             data = response.json()
             if "response" in data and len(data["response"]) > 0:
                 domain_data = data["response"][0]
-                return PageRankFeatures(
+                return OpenPageRankFeatures(
                     domain=domain_data["domain"],
                     page_rank_decimal=domain_data.get("page_rank_decimal"),
                     updated_date=data["last_updated"],
@@ -42,6 +48,19 @@ class OpenPageRankAPI:
                 return None
         else:
             response.raise_for_status()
+
+
+def get_open_page_rank_features(domain: str) -> Optional[OpenPageRankFeatures]:
+    """Get Open PageRank features for the given domain."""
+    api_key = config.open_page_rank_api_key
+    opr_api = OpenPageRankAPI(api_key)
+    return opr_api.get_open_page_rank_features(domain)
+
+
+@cache
+def get_open_page_rank_features_cached(domain: str) -> Optional[OpenPageRankFeatures]:
+    """Get Open PageRank features for the given domain (cached)."""
+    return get_open_page_rank_features(domain)
 
 
 if __name__ == "__main__":

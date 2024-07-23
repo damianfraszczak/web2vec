@@ -38,12 +38,12 @@ class HttpResponseFeatures:
 
 def check_redirects(response: requests.Response) -> bool:
     """Check if the response has been redirected."""
-    return len(response.history) > 0
+    return len(getattr(response, "history", [])) > 0
 
 
 def count_redirects(response: requests.Response) -> int:
     """Count the number of redirects in the response."""
-    return len(response.history)
+    return len(getattr(response, "history", []))
 
 
 def check_forms(response: requests.Response) -> bool:
