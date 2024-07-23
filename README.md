@@ -4,6 +4,7 @@ Web2Vec is a comprehensive library designed to convert websites into vector para
 
 Website analysis is crucial in various fields, such as SEO, where it helps improve website ranking, and in security, where it aids in identifying phishing sites. By building datasets based on known safe and malicious websites, Web2Vec facilitates the collection and analysis of their parameters, making it an ideal solution for these tasks.
 
+The goal of Web2Vec is to offer a comprehensive repository for implementing a broad spectrum of website processing-related methods. Many available tools exist, but learning and using them can be time-consuming. Moreover, new features are continually being introduced, making it difficult to keep up with the latest techniques. Web2Vec aims to bridge this gap by providing a complete solution for website analysis. This repository facilitates the collection and analysis of extensive information about websites, supporting both academic research and industry applications.
 Crucial factors:
 - All-in-One Solution: Web2Vec is an all-in-one solution that allows for the collection of a wide range of information about websites.
 - Efficiency and Expertise: Building a similar solution independently would be very time-consuming and require specialized knowledge. Web2Vec not only integrates with available APIs but also scrapes results from services like Google Index using Selenium.
@@ -281,6 +282,7 @@ class PhishTankFeatures:
 ```
 ### Similar Web
 ```python
+@dataclass
 class SimilarWebFeatures:
     Version: int
     SiteName: str
@@ -342,28 +344,26 @@ import os
 
 from scrapy.crawler import CrawlerProcess
 
-from src.web2vec.config import config
-from src.web2vec.crawlers.extractors import ALL_EXTRACTORS
-from src.web2vec.crawlers.spiders import Web2VecSpider
+import web2vec as w2v
 
 process = CrawlerProcess(
     settings={
         "FEEDS": {
-            os.path.join(config.crawler_output_path, "output.json"): {
+            os.path.join(w2v.config.crawler_output_path, "output.json"): {
                 "format": "json",
                 "encoding": "utf8",
             }
         },
-        "DEPTH_LIMIT": config.crawler_spider_depth_limit,
+        "DEPTH_LIMIT": 1,
         "LOG_LEVEL": "INFO",
     }
 )
 
 process.crawl(
-    Web2VecSpider,
+    w2v.Web2VecSpider,
     start_urls=["http://quotes.toscrape.com/"], # pages to process
     allowed_domains=["quotes.toscrape.com"], # domains to process for links
-    extractors=ALL_EXTRACTORS, # extractors to use
+    extractors=w2v.ALL_EXTRACTORS, # extractors to use
 )
 process.start()
 ```
@@ -377,7 +377,41 @@ and as a results you will get each processed page stored in a separate file as j
 
 sample content
 ```json
-
+{
+    "url": "http://quotes.toscrape.com/",
+    "title": "Quotes to Scrape",
+    "html": "HTML body, removed too big to show",
+    "response_headers": {
+        "b'Content-Length'": "[b'11054']",
+        "b'Date'": "[b'Tue, 23 Jul 2024 06:05:10 GMT']",
+        "b'Content-Type'": "[b'text/html; charset=utf-8']"
+    },
+    "status_code": 200,
+    "extractors": [
+        {
+            "name": "DNSFeatures",
+            "result": {
+                "domain": "quotes.toscrape.com",
+                "records": [
+                    {
+                        "record_type": "A",
+                        "ttl": 225,
+                        "values": [
+                            "35.211.122.109"
+                        ]
+                    },
+                    {
+                        "record_type": "CNAME",
+                        "ttl": 225,
+                        "values": [
+                            "ingress.prod-01.gcp.infra.zyte.group."
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}
 ```
 ### Website analysis
 Websites can be analysed without scrapping process, by using extractors directly. For example to get data from SimilarWeb for given domain you have just to call appropriate method:
@@ -388,6 +422,15 @@ from src.web2vec.extractors.external_api.similar_web_features import \
 
 domain_to_check = "down.pcclear.com"
 entry = get_similar_web_features(domain_to_check)
+print(entry)
+```
+
+All modules are exported into main package, so you can use import module and invoke them directly.
+```python
+import web2vec as w2v
+
+domain_to_check = "down.pcclear.com"
+entry = w2v.get_similar_web_features(domain_to_check)
 print(entry)
 ```
 

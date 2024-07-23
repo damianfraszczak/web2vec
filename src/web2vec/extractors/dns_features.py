@@ -84,10 +84,4 @@ if __name__ == "__main__":
     url = "https://www.example.com"
     domain = get_domain_from_url(url)
     result = get_dns_features(domain)
-
-    print(f"URL: {url}")
-    print(f"Number of IPs: {result.count_ips}")
-    print(f"Number of Name Servers: {result.count_name_servers}")
-    print(f"Number of MX Servers: {result.count_mx_servers}")
-    print(f"TTL: {result.extract_ttl}")
     print(result)
