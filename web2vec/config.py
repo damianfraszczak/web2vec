@@ -13,7 +13,7 @@ _DEFAULT_PATH = os.path.join(tempfile.gettempdir(), "web2vec")
 
 class Config(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix='WEB2VEC',
+        env_prefix='WEB2VEC_',
         env_file='.env',
         env_file_encoding='utf-8'
     )
@@ -38,6 +38,6 @@ class Config(BaseSettings):
                 return os.path.join(data["default_output_path"], "crawler")
         return value
 
-# Example usage
+
 config = Config()
-print(config)
+

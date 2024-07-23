@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from functools import cache
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
@@ -137,7 +138,7 @@ class URLLexicalFeatures:
     is_ip: bool = False
 
 
-def url_lexical_features(url: str) -> URLLexicalFeatures:
+def get_url_lexical_features(url: str) -> URLLexicalFeatures:
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
     path = parsed_url.path
@@ -232,9 +233,13 @@ def url_lexical_features(url: str) -> URLLexicalFeatures:
 
     return features
 
+@cache
+def get_url_lexical_features_cached(url: str) -> URLLexicalFeatures:
+    """Get the lexical features for the given URL."""
+    return get_url_lexical_features(url)
 
 # Example usage
 if __name__ == "__main__":
     url = "https://192.1.10.1/path/to/file.html?arg1=val1&arg2=val2"
-    features = url_lexical_features(url)
+    features = get_url_lexical_features(url)
     print(features)

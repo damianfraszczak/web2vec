@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass, field
+from functools import cache
 from typing import List, Optional
 
 import requests
@@ -70,7 +71,7 @@ class SimilarWebFeatures:
     RawData: dict = field(default_factory=dict)
 
 
-def get_similarweb_features(domain: str) -> Optional[SimilarWebFeatures]:
+def get_similar_web_features(domain: str) -> Optional[SimilarWebFeatures]:
     """Get SimilarWeb features for a given domain."""
     url = f"https://data.similarweb.com/api/v1/data?domain={domain}"  # noqa
 
@@ -135,8 +136,12 @@ def get_similarweb_features(domain: str) -> Optional[SimilarWebFeatures]:
         logger.error(f"Error fetching data: {e}", e)
         return None
 
+@cache
+def get_similar_web_features_cached(domain: str) -> Optional[SimilarWebFeatures]:
+    """Get the SimilarWeb features for the given domain."""
+    return get_similar_web_features(domain)
 
 if __name__ == "__main__":
     domain_to_check = "down.pcclear.com"
-    entry = get_similarweb_features(domain_to_check)
+    entry = get_similar_web_features(domain_to_check)
     print(entry)

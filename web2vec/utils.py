@@ -51,15 +51,17 @@ def sanitize_filename(filename):
     """Sanitize the filename by replacing invalid characters."""
     return re.sub(r'[<>:"/\\|?*]', "_", filename)
 
+def create_directories(*directories:str):
+    """Create directories if they do not exist."""
+    for directory in directories:
+        os.makedirs(directory, exist_ok=True)
 
 def get_file_path_for_url(url, directory=None, timeout=86400) -> str:
     """Return the path to the file for the given URL."""
     if not directory:
         directory = config.remote_url_output_path
 
-    # Ensure the directory exists
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    create_directories(directory)
 
     # Determine the appropriate filename based on the timeout value
     current_time = datetime.now()
@@ -125,3 +127,16 @@ def get_github_repo_release_info(repo: str) -> dict:
     url = f"https://api.github.com/repos/{repo}/releases/latest"  # noqa
     text = fetch_file_from_url_and_read(url)
     return json.loads(text)
+
+def store_json(data: dict, file_path: str):
+    """Store the given data as a JSON file."""
+
+    # Custom JSON encoder for datetime
+    class CustomJSONEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            return super().default(obj)
+
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(json.dumps(data, indent=4,cls=CustomJSONEncoder,))

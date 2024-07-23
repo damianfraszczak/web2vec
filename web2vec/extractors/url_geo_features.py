@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 from enum import Enum
+from functools import cache
 from typing import Dict, Optional, Union
 
 import geoip2.database
@@ -23,7 +24,8 @@ class URLGeoFeatures:
     asn: int
 
 
-def get_geolite_db_files(type: Optional[GeoLiteDbType] = None) -> Union[Dict[GeoLiteDbType, str], str]:
+def get_geolite_db_files(type: Optional[GeoLiteDbType] = None) -> Union[
+    Dict[GeoLiteDbType, str], str]:
     """Download the latest GeoLite2-Country and GeoLite2-ASN database files from GitHub."""
     repo = "PrxyHunter/GeoLite2"
     release_info = get_github_repo_release_info(repo)
@@ -47,7 +49,7 @@ def get_country(ip_address: str) -> Optional[str]:
             response = reader.country(ip_address)
             return response.country.iso_code
     except Exception as e:
-        logger.error(f"Error retrieving country for IP {ip_address}: {e}",e)
+        logger.error(f"Error retrieving country for IP {ip_address}: {e}", e)
         return None
 
 
@@ -74,6 +76,12 @@ def get_url_geo_features(url: str) -> URLGeoFeatures:
         country_code=country_code,
         asn=asn,
     )
+
+
+@cache
+def get_url_geo_features_cached(url: str) -> URLGeoFeatures:
+    """Get the geo features for the given URL."""
+    return get_url_geo_features(url)
 
 
 if __name__ == "__main__":

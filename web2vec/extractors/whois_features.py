@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import cache
 from typing import List, Optional, Dict
 
 import whois
@@ -65,6 +66,9 @@ def get_whois_features(domain: str) -> Optional[WhoisFeatures]:
         logger.error(f"Error fetching WHOIS data: {e}", e)
         return None
 
+@cache
+def get_whois_features_cached(domain: str) -> WhoisFeatures:
+    return get_whois_features(domain)
 
 if __name__ == "__main__":
     domain = "example.com"

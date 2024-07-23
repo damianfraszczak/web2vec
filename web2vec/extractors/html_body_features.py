@@ -26,7 +26,6 @@ class HtmlBodyFeatures:
     iframe_redirection: int
     mouse_over_effect: int
     right_click_disabled: int
-    website_forwarding: int
     num_scripts_http: int
     num_styles_http: int
     num_iframes_http: int
@@ -153,13 +152,6 @@ def right_click_disabled(soup: BeautifulSoup) -> int:
     if not soup:
         return 1
     return 0 if re.findall(r"event.button ?== ?2", str(soup)) else 1
-
-
-def website_forwarding(response: requests.Response) -> int:
-    """Check if the response contains any website forwarding."""
-    if not response.text:
-        return 1
-    return 0 if len(response.history) <= 2 else 1
 
 
 def num_scripts_http(soup: BeautifulSoup) -> int:
@@ -357,7 +349,6 @@ def get_html_body_features(body: str, url: str) -> HtmlBodyFeatures:
         iframe_redirection=iframe_redirection(soup),
         mouse_over_effect=mouse_over_effect(soup),
         right_click_disabled=right_click_disabled(soup),
-        website_forwarding=website_forwarding(response),
         num_scripts_http=num_scripts_http(soup),
         num_styles_http=num_styles_http(soup),
         num_iframes_http=num_iframes_http(soup),

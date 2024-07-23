@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from functools import cache
 from typing import Optional
 
 from selenium import webdriver
@@ -48,6 +49,10 @@ def get_google_index_features(url: str) -> GoogleIndexFeatures:
         driver.quit()
         return GoogleIndexFeatures(is_indexed=None, position=None)
 
+@cache
+def get_google_index_features_cached(url: str) -> GoogleIndexFeatures:
+    """Get the Google index features for the given URL."""
+    return get_google_index_features(url)
 
 if __name__ == "__main__":
     url = "wp.pl"

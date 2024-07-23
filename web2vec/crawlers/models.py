@@ -2,6 +2,7 @@ import scrapy
 
 
 class WebPage:
+    """Model of a web page"""
     def __init__(self, url, html):
         self.url = url
         self.html = html
