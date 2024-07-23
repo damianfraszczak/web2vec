@@ -80,3 +80,10 @@ To run pre-commit hooks on all changes in the branch:
 1.  Run `git diff --name-only --diff-filter=MA origin/master | xargs pre-commit run --files`
 
 For branches that are not based on `master` you might replace `origin/master` with `origin/{your_branch}`
+
+## Generating documentation
+### Source files
+In docs/source directory
+```shell
+sphinx-apidoc -o . ../../src -f -e
+```
