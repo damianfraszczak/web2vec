@@ -10,7 +10,7 @@ _DEFAULT_PATH = os.path.join(tempfile.gettempdir(), "web2vec")
 
 class Config(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="WEB2VEC_", env_file=".env", env_file_encoding="utf-8"
+        env_prefix="WEB2VEC_", env_file="../../.env", env_file_encoding="utf-8"
     )
 
     default_output_path: str = _DEFAULT_PATH
