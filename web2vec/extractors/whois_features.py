@@ -1,11 +1,13 @@
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import cache
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 import whois
-import logging
+
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class WhoisFeatures:
@@ -37,18 +39,24 @@ class WhoisFeatures:
         age_days = (datetime.now() - creation_date).days if creation_date else 0
         return age_days
 
+
 def get_whois_features(domain: str) -> Optional[WhoisFeatures]:
+    """Fetch WHOIS data for a given domain."""
     try:
         w = whois.whois(domain)
         whois_data = WhoisFeatures(
-            domain_name=w.domain_name if isinstance(w.domain_name, list) else [w.domain_name],
+            domain_name=(
+                w.domain_name if isinstance(w.domain_name, list) else [w.domain_name]
+            ),
             registrar=w.registrar,
             whois_server=w.whois_server,
             referral_url=w.referral_url,
             updated_date=w.updated_date,
             creation_date=w.creation_date,
             expiration_date=w.expiration_date,
-            name_servers=w.name_servers if isinstance(w.name_servers, list) else [w.name_servers],
+            name_servers=(
+                w.name_servers if isinstance(w.name_servers, list) else [w.name_servers]
+            ),
             status=w.status if isinstance(w.status, list) else [w.status],
             emails=w.emails if isinstance(w.emails, list) else [w.emails],
             dnssec=w.dnssec,
@@ -59,16 +67,19 @@ def get_whois_features(domain: str) -> Optional[WhoisFeatures]:
             state=w.state,
             zipcode=w.zipcode,
             country=w.country,
-            raw=w.__dict__  # Store all raw data for reference
+            raw=w.__dict__,  # Store all raw data for reference
         )
         return whois_data
-    except Exception as e:
+    except Exception as e:  # noqa
         logger.error(f"Error fetching WHOIS data: {e}", e)
         return None
 
+
 @cache
 def get_whois_features_cached(domain: str) -> WhoisFeatures:
+    """Cache the WHOIS data for a given domain."""
     return get_whois_features(domain)
+
 
 if __name__ == "__main__":
     domain = "example.com"

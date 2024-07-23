@@ -1,10 +1,7 @@
-import json
 import os.path
 import tempfile
 
-from pydantic import validator, field_validator
-from pydantic.functional_validators import FieldValidatorModes
-from pydantic.v1 import root_validator
+from pydantic import field_validator
 from pydantic_core.core_schema import ValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,9 +10,7 @@ _DEFAULT_PATH = os.path.join(tempfile.gettempdir(), "web2vec")
 
 class Config(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix='WEB2VEC_',
-        env_file='.env',
-        env_file_encoding='utf-8'
+        env_prefix="WEB2VEC_", env_file=".env", env_file_encoding="utf-8"
     )
 
     default_output_path: str = _DEFAULT_PATH
@@ -25,7 +20,7 @@ class Config(BaseSettings):
     crawler_output_path: str = ""
     crawler_spider_depth_limit: int = 5
 
-    @field_validator("remote_url_output_path", "crawler_output_path", mode='before')
+    @field_validator("remote_url_output_path", "crawler_output_path", mode="before")
     @classmethod
     def set_correct_path(cls, value: str, info: ValidationInfo):
         data = info.data
@@ -40,4 +35,3 @@ class Config(BaseSettings):
 
 
 config = Config()
-

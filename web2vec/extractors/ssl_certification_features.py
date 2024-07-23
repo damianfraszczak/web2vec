@@ -111,10 +111,12 @@ def get_certificate_features(hostname: str) -> CertificateFeatures:
             trust_message="No certificate found",
         )
 
+
 @cache
 def get_certificate_features_cached(hostname: str) -> CertificateFeatures:
     """Get the certificate features for the given hostname."""
     return get_certificate_features(hostname)
+
 
 if __name__ == "__main__":
     hostname = "www.example.com"

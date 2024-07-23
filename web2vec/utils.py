@@ -51,10 +51,12 @@ def sanitize_filename(filename):
     """Sanitize the filename by replacing invalid characters."""
     return re.sub(r'[<>:"/\\|?*]', "_", filename)
 
-def create_directories(*directories:str):
+
+def create_directories(*directories: str):
     """Create directories if they do not exist."""
     for directory in directories:
         os.makedirs(directory, exist_ok=True)
+
 
 def get_file_path_for_url(url, directory=None, timeout=86400) -> str:
     """Return the path to the file for the given URL."""
@@ -128,6 +130,7 @@ def get_github_repo_release_info(repo: str) -> dict:
     text = fetch_file_from_url_and_read(url)
     return json.loads(text)
 
+
 def store_json(data: dict, file_path: str):
     """Store the given data as a JSON file."""
 
@@ -138,5 +141,11 @@ def store_json(data: dict, file_path: str):
                 return obj.isoformat()
             return super().default(obj)
 
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(json.dumps(data, indent=4,cls=CustomJSONEncoder,))
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(
+            json.dumps(
+                data,
+                indent=4,
+                cls=CustomJSONEncoder,
+            )
+        )
