@@ -22,13 +22,14 @@ class OpenPageRankAPI:
         self.api_key = api_key
         self.base_url = "https://openpagerank.com/api/v1.0/getPageRank"
 
-    def get_open_page_rank_features(self, domain: str) -> Optional[
-        OpenPageRankFeatures]:
+    def get_open_page_rank_features(
+        self, domain: str
+    ) -> Optional[OpenPageRankFeatures]:
+        """Get Open PageRank features for the given domain."""
         headers = {"API-OPR": self.api_key}
         params = {"domains[]": domain}
         response = requests.get(
-            self.base_url, headers=headers, params=params,
-            timeout=config.api_timeout
+            self.base_url, headers=headers, params=params, timeout=config.api_timeout
         )
 
         if response.status_code == 200:
@@ -48,14 +49,15 @@ class OpenPageRankAPI:
 
 
 def get_open_page_rank_features(domain: str) -> Optional[OpenPageRankFeatures]:
+    """Get Open PageRank features for the given domain."""
     api_key = config.open_page_rank_api_key
     opr_api = OpenPageRankAPI(api_key)
     return opr_api.get_open_page_rank_features(domain)
 
 
 @cache
-def get_open_page_rank_features_cached(domain: str) -> Optional[
-    OpenPageRankFeatures]:
+def get_open_page_rank_features_cached(domain: str) -> Optional[OpenPageRankFeatures]:
+    """Get Open PageRank features for the given domain (cached)."""
     return get_open_page_rank_features(domain)
 
 

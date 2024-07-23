@@ -6,8 +6,7 @@ from typing import Optional
 
 from requests import RequestException
 
-from web2vec.utils import fetch_file_from_url, get_domain_from_url, \
-    fetch_file_from_url_and_read
+from web2vec.utils import fetch_file_from_url_and_read, get_domain_from_url
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +59,12 @@ def get_phishtank_features(domain: str) -> Optional[PhishTankFeatures]:
             return entry
     return None
 
+
 @cache
 def get_phishtank_features_cached(domain: str) -> Optional[PhishTankFeatures]:
     """Get PhishTank features for the given domain."""
     return get_phishtank_features(domain)
+
 
 def check_phish_phishtank(domain: str) -> bool:
     """Check if the given domain is listed in the PhishTank feed."""
