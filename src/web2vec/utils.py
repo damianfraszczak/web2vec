@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from web2vec.config import config
+from src.web2vec.config import config
 
 logger = logging.getLogger(__name__)
 

@@ -4,6 +4,12 @@ Web2Vec is a comprehensive library designed to convert websites into vector para
 
 Website analysis is crucial in various fields, such as SEO, where it helps improve website ranking, and in security, where it aids in identifying phishing sites. By building datasets based on known safe and malicious websites, Web2Vec facilitates the collection and analysis of their parameters, making it an ideal solution for these tasks.
 
+Crucial factors:
+- All-in-One Solution: Web2Vec is an all-in-one solution that allows for the collection of a wide range of information about websites.
+- Efficiency and Expertise: Building a similar solution independently would be very time-consuming and require specialized knowledge. Web2Vec not only integrates with available APIs but also scrapes results from services like Google Index using Selenium.
+- Open Source Advantage: Publishing this tool as open source will facilitate many studies, making them simpler and allowing researchers and industry professionals to focus on more advanced tasks.
+- Continuous Improvement: New techniques will be added successively, ensuring continuous growth in this area.
+
 ## Features
 - Crawler Implementation: Easily crawl specified websites with customizable depth and allowed domains.
 - Network Analysis: Build and analyze networks of connected websites.
@@ -330,14 +336,15 @@ export WEB2VEC_DEFAULT_OUTPUT_PATH=/home/admin/crawler/output
 export WEB2VEC_OPEN_PAGE_RANK_API_KEY=XXXXX
 ```
 ### Crawling websites and extract parameters
+
 ```python
 import os
 
 from scrapy.crawler import CrawlerProcess
 
-from web2vec.config import config
-from web2vec.crawlers.extractors import ALL_EXTRACTORS
-from web2vec.crawlers.spiders import Web2VecSpider
+from src.web2vec.config import config
+from src.web2vec.crawlers.extractors import ALL_EXTRACTORS
+from src.web2vec.crawlers.spiders import Web2VecSpider
 
 process = CrawlerProcess(
     settings={
@@ -374,8 +381,9 @@ sample content
 ```
 ### Website analysis
 Websites can be analysed without scrapping process, by using extractors directly. For example to get data from SimilarWeb for given domain you have just to call appropriate method:
+
 ```python
-from web2vec.extractors.external_api.similar_web_features import \
+from src.web2vec.extractors.external_api.similar_web_features import \
     get_similar_web_features
 
 domain_to_check = "down.pcclear.com"

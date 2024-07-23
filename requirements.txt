@@ -1,5 +1,4 @@
 scrapy
-Twisted
 networkx
 beautifulsoup4
 matplotlib

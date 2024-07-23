@@ -2,10 +2,10 @@ import os
 
 from scrapy.crawler import CrawlerProcess
 
-from web2vec.config import config
-from web2vec.crawlers.extractors import ALL_EXTRACTORS
-from web2vec.crawlers.spiders import Web2VecSpider
-from web2vec.extractors.external_api.similar_web_features import (
+from src.web2vec.config import config
+from src.web2vec.crawlers.extractors import ALL_EXTRACTORS
+from src.web2vec.crawlers.spiders import Web2VecSpider
+from src.web2vec.extractors.external_api.similar_web_features import (
     get_similar_web_features,
 )
 
