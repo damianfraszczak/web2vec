@@ -26,7 +26,7 @@ def find_version(*path_parts):
 
 
 setup(
-    name="nsdlib",
+    name="web2vec",
     version=find_version("src", "web2vec", "version.py"),
     license="MIT",
     description="Website to vector representation library",
