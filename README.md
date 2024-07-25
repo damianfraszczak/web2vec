@@ -1,4 +1,4 @@
-# Web2Vec: Website to Vector Library
+# Web2Vec: Website to Vector Representation Library
 ## Overview
 Web2Vec is a comprehensive library designed to convert websites into vector parameters. It provides ready-to-use implementations of web crawlers using Scrapy, making it accessible for less experienced researchers. This tool is invaluable for website analysis tasks, including SEO, disinformation detection, and phishing identification.
 
