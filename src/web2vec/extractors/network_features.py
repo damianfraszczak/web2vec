@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 import networkx as nx
 from bs4 import BeautifulSoup
 
-from src.web2vec.utils import get_domain_from_url
+from web2vec.utils import get_domain_from_url
 
 
 def build_graph(main_directory: str, allowed_domains: Optional[List] = None):

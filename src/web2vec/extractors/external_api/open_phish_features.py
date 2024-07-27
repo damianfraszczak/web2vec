@@ -4,7 +4,7 @@ from functools import cache
 
 import requests
 
-from src.web2vec.utils import fetch_file_from_url_and_read
+from web2vec.utils import fetch_file_from_url_and_read
 
 logger = logging.getLogger(__name__)
 

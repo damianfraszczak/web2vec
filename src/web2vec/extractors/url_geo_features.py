@@ -6,7 +6,7 @@ from typing import Dict, Optional, Union
 
 import geoip2.database
 
-from src.web2vec.utils import (
+from web2vec.utils import (
     fetch_file_from_url,
     get_github_repo_release_info,
     get_ip_from_url,
