@@ -12,7 +12,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../src/"))
 
-from netcenlib.version import __version__  # noqa
+from web2vec.version import __version__  # noqa
 
 # -- Project information -----------------------------------------------------
 now = datetime.datetime.now()
