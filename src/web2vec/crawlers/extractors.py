@@ -1,58 +1,58 @@
 from scrapy.http import Response
 
-from src.web2vec.extractors.dns_features import (
+from web2vec.extractors.dns_features import (
     DNSFeatures,
     get_dns_features_cached,
 )
-from src.web2vec.extractors.external_api.google_index_features import (
+from web2vec.extractors.external_api.google_index_features import (
     GoogleIndexFeatures,
     get_google_index_features,
 )
-from src.web2vec.extractors.external_api.open_pagerank_features import (
+from web2vec.extractors.external_api.open_pagerank_features import (
     OpenPageRankFeatures,
     get_open_page_rank_features_cached,
 )
-from src.web2vec.extractors.external_api.open_phish_features import (
+from web2vec.extractors.external_api.open_phish_features import (
     OpenPhishFeatures,
     get_open_phish_features_cached,
 )
-from src.web2vec.extractors.external_api.phish_tank_features import (
+from web2vec.extractors.external_api.phish_tank_features import (
     PhishTankFeatures,
     get_phishtank_features_cached,
 )
-from src.web2vec.extractors.external_api.similar_web_features import (
+from web2vec.extractors.external_api.similar_web_features import (
     SimilarWebFeatures,
     get_similar_web_features_cached,
 )
-from src.web2vec.extractors.external_api.url_haus_features import (
+from web2vec.extractors.external_api.url_haus_features import (
     URLHausFeatures,
     get_url_haus_features_cached,
 )
-from src.web2vec.extractors.html_body_features import (
+from web2vec.extractors.html_body_features import (
     HtmlBodyFeatures,
     get_html_body_features,
 )
-from src.web2vec.extractors.http_response_features import (
+from web2vec.extractors.http_response_features import (
     HttpResponseFeatures,
     get_http_response_features,
 )
-from src.web2vec.extractors.ssl_certification_features import (
+from web2vec.extractors.ssl_certification_features import (
     CertificateFeatures,
     get_certificate_features_cached,
 )
-from src.web2vec.extractors.url_geo_features import (
+from web2vec.extractors.url_geo_features import (
     URLGeoFeatures,
     get_url_geo_features_cached,
 )
-from src.web2vec.extractors.url_lexical_features import (
+from web2vec.extractors.url_lexical_features import (
     URLLexicalFeatures,
     get_url_lexical_features_cached,
 )
-from src.web2vec.extractors.whois_features import (
+from web2vec.extractors.whois_features import (
     WhoisFeatures,
     get_whois_features_cached,
 )
-from src.web2vec.utils import get_domain_from_url
+from web2vec.utils import get_domain_from_url
 
 
 class Extractor:

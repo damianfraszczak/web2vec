@@ -8,7 +8,7 @@ from typing import Any, Dict, Tuple
 import idna
 import requests
 
-from src.web2vec.config import config
+from web2vec.config import config
 
 
 @dataclass
