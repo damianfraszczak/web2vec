@@ -62,9 +62,9 @@ def get_dns_features(domain: str) -> DNSFeatures:
                     DNSRecordFeatures(record_type, ttl, record_values)
                 )
             except dns.resolver.NoAnswer:
-                logger.warning(f"No {record_type} record found for {domain}")
+                logger.debug(f"No {record_type} record found for {domain}")
             except dns.resolver.NXDOMAIN:
-                print(f"{domain} does not exist")
+                logger.warning(f"{domain} does not exist")
             except Exception as e:  # noqa
                 logger.warning(
                     f"Error fetching {record_type} records for {domain}: {e}", e
