@@ -15,9 +15,7 @@ from web2vec.config import config
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
+DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
 def valid_ip(host: str) -> bool:
@@ -47,8 +45,7 @@ def get_ip_from_url(url: str) -> str:
 
 def entropy(string: str) -> float:
     """Calculate the entropy of the given string."""
-    prob = [float(string.count(c)) / len(string) for c in
-            dict.fromkeys(list(string))]
+    prob = [float(string.count(c)) / len(string) for c in dict.fromkeys(list(string))]
     return -sum([(p * math.log(p) / math.log(2.0)) for p in prob])
 
 
@@ -94,12 +91,16 @@ def fetch_url(url, headers=None):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     headers = headers or {}
     headers = {**DEFAULT_HEADERS, **headers}
-    return requests.get(url, headers=headers, timeout=config.api_timeout,
-                        allow_redirects=True, verify=False)
+    return requests.get(
+        url,
+        headers=headers,
+        timeout=config.api_timeout,
+        allow_redirects=True,
+        verify=False,
+    )
 
 
-def fetch_file_from_url(url, directory=None, headers=None,
-                        timeout=86400) -> str:
+def fetch_file_from_url(url, directory=None, headers=None, timeout=86400) -> str:
     """
     Check if the file exists in the directory and is newer than the timeout.
     If not, downloads the file from the URL, saves it in the directory, and returns the path.
@@ -165,6 +166,18 @@ def store_json(data: dict, file_path: str):
             )
         )
 
-def is_simple_type(obj: object)->bool:
+
+def is_numerical_type(obj: object) -> bool:
     """Check if the given object is a simple type."""
-    return isinstance(obj, (str, int, float, bool))
+    return isinstance(obj, (int, float, bool))
+
+
+def transform_value(obj: object) -> object:
+    """Transform the given object to a simple type."""
+    if isinstance(obj, (int, float)):
+        return obj
+    if isinstance(obj, bool):
+        return 1 if obj else 0
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    return str(obj)
