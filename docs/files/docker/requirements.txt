@@ -1,0 +1,2 @@
+pandas
+web2vec

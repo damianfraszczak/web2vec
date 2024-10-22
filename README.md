@@ -18,6 +18,7 @@
 <p align="center">
   <a href="https://github.com/damianfraszczak/web2vec?tab=readme-ov-file#why-web2vec">✨ Why Web2Vec?</a>
   <a href="https://github.com/damianfraszczak/web2vec?tab=readme-ov-file#features">📦 Features</a>
+<a href="https://github.com/damianfraszczak/web2vec/blob/master/docs/files/QUICK_START.md">🚀 Quick Start</a>
   <a href="https://github.com/damianfraszczak/web2vec?tab=readme-ov-file#integration-and-configuration">🧑‍💻 Installation and configuration</a>
   <a href="https://web2vec.readthedocs.io/">📮 Documentation</a>
   <a href="https://github.com/damianfraszczak/web2vec/blob/master/docs/files/jupyter">📓 Jupyter Notebook examples</a>
