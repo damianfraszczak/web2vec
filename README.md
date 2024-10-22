@@ -1,4 +1,4 @@
-<p align="center"><img src=".github/images/logo.png" alt="web2vec" title="web2vec"/></p>
+<p align="center"><img src=".github/images/logo.png" width="256" alt="web2vec" title="web2vec"/></p>
 
 <h1 align="center">
     ⚔️ Web2Vec: Website to Vector Representation Library ⚔️
