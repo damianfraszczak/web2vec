@@ -2,8 +2,6 @@ import logging
 from dataclasses import asdict
 from typing import List
 
-logger = logging.getLogger(__name__)
-
 from requests import Response as ReqResponse
 from scrapy.http import Response
 
@@ -65,6 +63,8 @@ from web2vec.utils import (
     is_numerical_type,
     transform_value,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Extractor:
@@ -231,11 +231,10 @@ def process_extractors(
                         if not use_only_numerical or is_numerical_type(value)
                     }
                 )
-            except Exception as e:
+            except Exception as e:  # noqa
                 logger.warning(
                     f"Error extracting features with {extractor.features_name()}: {e}"
                 )
-    except Exception as e:
-        logger.exception(e)
-        logger.warning(f"Couldn't reach {url}.")
+    except Exception as e:  # noqa
+        logger.warning(f"Couldn't reach {url}. {e}")
     return extractors_result

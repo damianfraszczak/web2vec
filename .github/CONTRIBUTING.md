@@ -77,7 +77,7 @@ Pre-commit works on staged files while commiting. To run it without a command on
 To run pre-commit hooks on all changes in the branch:
 
 1.  Sync branch with main
-1.  Run `git diff --name-only --diff-filter=MA origin/master | xargs pre-commit run --files`
+2.  Run `git diff --name-only --diff-filter=MA origin/master | xargs pre-commit run --files` or `git diff --name-only --diff-filter=MA origin/master | ForEach-Object { pre-commit run --files $_ }` on Windows.
 
 For branches that are not based on `master` you might replace `origin/master` with `origin/{your_branch}`
 
