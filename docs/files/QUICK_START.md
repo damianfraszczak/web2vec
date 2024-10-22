@@ -99,4 +99,9 @@ entry = w2v.get_similar_web_features(domain_to_check)
 print(entry)
 ```
 
-If you would like to test ``Web2Vec`` functionalities without installing it on your machine consider using the preconfigured [Jupyter notebook](web2vec.ipynb).
+If you would like to test ``Web2Vec`` functionalities without installing it on your machine consider using the preconfigured [Jupyter notebook](jupyter/web2vec.ipynb).
+How to create own website related dataset using Web2Vec is described in [this notebook](jupyter/web2vec_dataset_creation.ipynb).
+How to train ML model using Web2Vec dataset is described in [this notebook](jupyter/web2vec_model_training.ipynb).
+
+## Docker usage
+If you want to use Web2Vec in a Docker container, please check this [README](docker/README.md) file.

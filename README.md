@@ -1,15 +1,44 @@
-# Web2Vec: Website to Vector Representation Library
-## Overview
+<p align="center"><img src=".github/images/logo.png" alt="web2vec" title="web2vec"/></p>
+
+<h1 align="center">
+    ⚔️ Web2Vec: Website to Vector Representation Library ⚔️
+</h1>
+
+<p align="center">
+    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/web2vec.svg">
+    <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/web2vec.svg" href="https://pepy.tech/project/web2vec">
+    <a href="https://repology.org/project/python:web2vec/versions">
+        <img src="https://repology.org/badge/tiny-repos/python:web2vec.svg" alt="Packaging status">
+    </a>
+    <img alt="Downloads" src="https://pepy.tech/badge/web2vec">
+    <img alt="GitHub license" src="https://img.shields.io/github/license/damianfraszczak/web2vec.svg" href="https://github.com/damianfraszczak/web2vec/blob/master/LICENSE">
+    <img alt="Documentation Status" src="https://readthedocs.org/projects/web2vec/badge/?version=latest" href="https://web2vec.readthedocs.io/en/latest/?badge=latest">
+</p>
+
+<p align="center">
+  <a href="https://github.com/damianfraszczak/web2vec?tab=readme-ov-file#why-web2vec">✨ Why Web2Vec?</a>
+  <a href="https://github.com/damianfraszczak/web2vec?tab=readme-ov-file#features">📦 Features</a>
+<a href="https://github.com/damianfraszczak/web2vec/blob/master/docs/files/QUICK_START.md">🚀 Quick Start</a>
+  <a href="https://github.com/damianfraszczak/web2vec?tab=readme-ov-file#integration-and-configuration">🧑‍💻 Installation and configuration</a>
+  <a href="https://web2vec.readthedocs.io/">📮 Documentation</a>
+  <a href="https://github.com/damianfraszczak/web2vec/blob/master/docs/files/jupyter">📓 Jupyter Notebook examples</a>
+  <a href="LICENSE">🔑 License</a>
+</p>
+
 Web2Vec is a comprehensive library designed to convert websites into vector parameters. It provides ready-to-use implementations of web crawlers using Scrapy, making it accessible for less experienced researchers. This tool is invaluable for website analysis tasks, including SEO, disinformation detection, and phishing identification.
 
 Website analysis is crucial in various fields, such as SEO, where it helps improve website ranking, and in security, where it aids in identifying phishing sites. By building datasets based on known safe and malicious websites, Web2Vec facilitates the collection and analysis of their parameters, making it an ideal solution for these tasks.
 
 The goal of Web2Vec is to offer a comprehensive repository for implementing a broad spectrum of website processing-related methods. Many available tools exist, but learning and using them can be time-consuming. Moreover, new features are continually being introduced, making it difficult to keep up with the latest techniques. Web2Vec aims to bridge this gap by providing a complete solution for website analysis. This repository facilitates the collection and analysis of extensive information about websites, supporting both academic research and industry applications.
-Crucial factors:
-- All-in-One Solution: Web2Vec is an all-in-one solution that allows for the collection of a wide range of information about websites.
-- Efficiency and Expertise: Building a similar solution independently would be very time-consuming and require specialized knowledge. Web2Vec not only integrates with available APIs but also scrapes results from services like Google Index using Selenium.
-- Open Source Advantage: Publishing this tool as open source will facilitate many studies, making them simpler and allowing researchers and industry professionals to focus on more advanced tasks.
-- Continuous Improvement: New techniques will be added successively, ensuring continuous growth in this area.
+
+* **Free software:** MIT license,
+* **Documentation:** https://web2vec.readthedocs.io/en/latest/,
+* **Python versions:** 3.9 | 3.10 | 3.11
+* **Tested OS:** Windows, Ubuntu, Fedora and CentOS. **However, that does not mean it does not work on others.**
+* **All-in-One Solution::**  Web2Vec is an all-in-one solution that allows for the collection of a wide range of information about websites.
+* **Efficiency and Expertise: :** Building a similar solution independently would be very time-consuming and require specialized knowledge. Web2Vec not only integrates with available APIs but also scrapes results from services like Google Index using Selenium.
+* **Open Source Advantage: :** Publishing this tool as open source will facilitate many studies, making them simpler and allowing researchers and industry professionals to focus on more advanced tasks.
+* **Continuous Improvement: :** New techniques will be added successively, ensuring continuous growth in this area.
 
 ## Features
 - Crawler Implementation: Easily crawl specified websites with customizable depth and allowed domains.

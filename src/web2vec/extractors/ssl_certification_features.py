@@ -1,3 +1,4 @@
+import logging
 import socket
 import ssl
 from dataclasses import dataclass
@@ -9,6 +10,8 @@ import idna
 import requests
 
 from web2vec.config import config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -25,14 +28,18 @@ class CertificateFeatures:
 
 def get_tls_certificate(hostname: str, port: int = 443) -> Dict[str, Any]:
     """Retrieve the TLS certificate for a given hostname and port."""
-    context = ssl.create_default_context()
+    try:
+        context = ssl.create_default_context()
 
-    hostname_idna = idna.encode(hostname).decode("ascii")
+        hostname_idna = idna.encode(hostname).decode("ascii")
 
-    with socket.create_connection((hostname_idna, port)) as sock:
-        with context.wrap_socket(sock, server_hostname=hostname_idna) as ssock:
-            cert = ssock.getpeercert()
-            return cert
+        with socket.create_connection((hostname_idna, port)) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname_idna) as ssock:
+                cert = ssock.getpeercert()
+                return cert
+    except Exception as e:  # noqa
+        logger.debug(f"Error retrieving certificate for {hostname}: {e}")
+        return {}
 
 
 def is_certificate_valid(cert: Dict[str, Any]) -> Tuple[bool, str]:

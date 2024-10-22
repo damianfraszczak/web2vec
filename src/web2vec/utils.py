@@ -9,10 +9,13 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import requests
+import urllib3
 
 from web2vec.config import config
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
 def valid_ip(host: str) -> bool:
@@ -20,8 +23,7 @@ def valid_ip(host: str) -> bool:
     try:
         ipaddress.ip_address(host)
         return True
-    except Exception as e:  # noqa
-        logger.warn(e)
+    except Exception:  # noqa
         return False
 
 
@@ -84,6 +86,20 @@ def get_file_path_for_url(url, directory=None, timeout=86400) -> str:
     return file_name
 
 
+def fetch_url(url, headers=None, ssl_verify=False):
+    """Fetch the given URL and return the response."""
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    headers = headers or {}
+    headers = {**DEFAULT_HEADERS, **headers}
+    return requests.get(
+        url,
+        headers=headers,
+        timeout=config.api_timeout,
+        allow_redirects=True,
+        verify=ssl_verify,
+    )
+
+
 def fetch_file_from_url(url, directory=None, headers=None, timeout=86400) -> str:
     """
     Check if the file exists in the directory and is newer than the timeout.
@@ -105,7 +121,7 @@ def fetch_file_from_url(url, directory=None, headers=None, timeout=86400) -> str
             return file_name
 
     # Download the file from the URL
-    response = requests.get(url, headers=headers or {}, timeout=config.api_timeout)
+    response = fetch_url(url, headers=headers)
     if response.status_code == 200:
         with open(file_name, "wb") as file:
             file.write(response.content)
@@ -149,3 +165,19 @@ def store_json(data: dict, file_path: str):
                 cls=CustomJSONEncoder,
             )
         )
+
+
+def is_numerical_type(obj: object) -> bool:
+    """Check if the given object is a simple type."""
+    return isinstance(obj, (int, float, bool))
+
+
+def transform_value(obj: object) -> object:
+    """Transform the given object to a simple type."""
+    if isinstance(obj, bool):
+        return 1 if obj else 0
+    if isinstance(obj, (int, float)):
+        return obj
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    return str(obj)

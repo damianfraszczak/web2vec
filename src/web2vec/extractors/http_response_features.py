@@ -5,8 +5,6 @@ from typing import List, Optional
 import requests
 from bs4 import BeautifulSoup
 
-from web2vec.config import config
-
 logger = logging.getLogger(__name__)
 
 
@@ -184,13 +182,13 @@ def get_http_response_features(
     url: Optional[str] = None, response: Optional[requests.Response] = None
 ) -> HttpResponseFeatures:
     """Get the HTTP response features for a given URL or response object."""
+    from web2vec import fetch_url
+
     if not url and not response:
         raise ValueError("Either URL or response object must be provided.")
     if not response:
         try:
-            response = requests.get(
-                url, allow_redirects=True, timeout=config.api_timeout
-            )
+            response = fetch_url(url)
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching URL: {e}", e)
             return HttpResponseFeatures(
