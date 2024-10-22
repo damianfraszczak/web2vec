@@ -86,7 +86,7 @@ def get_file_path_for_url(url, directory=None, timeout=86400) -> str:
     return file_name
 
 
-def fetch_url(url, headers=None):
+def fetch_url(url, headers=None, ssl_verify=False):
     """Fetch the given URL and return the response."""
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     headers = headers or {}
@@ -96,7 +96,7 @@ def fetch_url(url, headers=None):
         headers=headers,
         timeout=config.api_timeout,
         allow_redirects=True,
-        verify=False,
+        verify=ssl_verify,
     )
 
 
@@ -174,10 +174,10 @@ def is_numerical_type(obj: object) -> bool:
 
 def transform_value(obj: object) -> object:
     """Transform the given object to a simple type."""
-    if isinstance(obj, (int, float)):
-        return obj
     if isinstance(obj, bool):
         return 1 if obj else 0
+    if isinstance(obj, (int, float)):
+        return obj
     if isinstance(obj, datetime):
         return obj.isoformat()
     return str(obj)
