@@ -1,7 +1,7 @@
 <p align="center"><img src=".github/images/logo.png" width="256" alt="web2vec" title="web2vec"/></p>
 
 <h1 align="center">
-    ⚔️ Web2Vec: Website to Vector Representation Library ⚔️
+    ⚔️ Web2Vec: A Python Library for Website-to-Vector Transformation ⚔️
 </h1>
 
 <p align="center">
