@@ -31,9 +31,12 @@ Website analysis is crucial in various fields, such as SEO, where it helps impro
 
 The goal of Web2Vec is to offer a comprehensive repository for implementing a broad spectrum of website processing-related methods. Many available tools exist, but learning and using them can be time-consuming. Moreover, new features are continually being introduced, making it difficult to keep up with the latest techniques. Web2Vec aims to bridge this gap by providing a complete solution for website analysis. This repository facilitates the collection and analysis of extensive information about websites, supporting both academic research and industry applications.
 
-If you use Web2Vec as support to your research consider citing:
+**If you use Web2Vec as support to your research consider citing:**
 
-D. Frąszczak, E. Frąszczak. Web2Vec: A python library for website-to-vector transformation. SoftwareX. 2025. DOI:[10.1016/j.softx.2025.102070](https://doi.org/10.1016/j.softx.2025.102070).
+
+``
+D. Frąszczak, E. Frąszczak. Web2Vec: A python library for website-to-vector transformation. SoftwareX. 2025. `` DOI:[10.1016/j.softx.2025.102070](https://doi.org/10.1016/j.softx.2025.102070).
+
 
 * **Free software:** MIT license,
 * **Documentation:** https://web2vec.readthedocs.io/en/latest/,
