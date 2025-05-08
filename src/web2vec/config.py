@@ -16,6 +16,7 @@ class Config(BaseSettings):
     default_output_path: str = _DEFAULT_PATH
     remote_url_output_path: str = ""
     open_page_rank_api_key: str = ""
+    brave_search_api_key: str = ""
     api_timeout: int = 60
     crawler_output_path: str = ""
     crawler_spider_depth_limit: int = 5

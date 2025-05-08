@@ -43,7 +43,7 @@ D. Frąszczak, E. Frąszczak. Web2Vec: A python library for website-to-vector tr
 * **Python versions:** 3.9 | 3.10 | 3.11
 * **Tested OS:** Windows, Ubuntu, Fedora and CentOS. **However, that does not mean it does not work on others.**
 * **All-in-One Solution::**  Web2Vec is an all-in-one solution that allows for the collection of a wide range of information about websites.
-* **Efficiency and Expertise: :** Building a similar solution independently would be very time-consuming and require specialized knowledge. Web2Vec not only integrates with available APIs but also scrapes results from services like Google Index using Selenium.
+* **Efficiency and Expertise: :** Building a similar solution independently would be very time-consuming and require specialized knowledge. Web2Vec not only integrates with available APIs but also checks site indexation using the Brave Search API.
 * **Open Source Advantage: :** Publishing this tool as open source will facilitate many studies, making them simpler and allowing researchers and industry professionals to focus on more advanced tasks.
 * **Continuous Improvement: :** New techniques will be added successively, ensuring continuous growth in this area.
 
@@ -289,6 +289,16 @@ class GoogleIndexFeatures:
     is_indexed: Optional[bool]
     position: Optional[int] = None
 ```
+*Note: As of July 2024, the Google Index feature is now powered by the Brave Search API. It checks if a site is indexed in Brave Search, which is a large, independent web index. You need a Brave Search API key to use this feature.*
+
+#### Configuration for Brave Search API
+Set your Brave Search API key as an environment variable:
+```shell
+export WEB2VEC_BRAVE_SEARCH_API_KEY=YOUR_API_KEY
+```
+
+The extractor will use this key automatically. See https://api.search.brave.com/ for details on obtaining a key.
+
 ### Open Page Rank
 ```python
 @dataclass
@@ -372,6 +382,7 @@ Configure the library using environment variables or configuration files.
 export WEB2VEC_CRAWLER_SPIDER_DEPTH_LIMIT=2
 export WEB2VEC_DEFAULT_OUTPUT_PATH=/home/admin/crawler/output
 export WEB2VEC_OPEN_PAGE_RANK_API_KEY=XXXXX
+export WEB2VEC_BRAVE_SEARCH_API_KEY=XXXXX
 ```
 ### Crawling websites and extract parameters
 
@@ -482,3 +493,4 @@ Project maintainers are:
 
 - Damian Frąszczak
 - Edyta Frąszczak
+- Krystian Magdziarz
