@@ -12,3 +12,5 @@ webdriver-manager
 dnspython
 pydantic
 pydantic_settings
+requests
+pytest
