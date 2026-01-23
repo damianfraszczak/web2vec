@@ -1,13 +1,8 @@
-.. NetCenLib documentation master file, created by
-   sphinx-quickstart on Tue Feb 20 15:27:13 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Web2Vec documentation!
 =====================================
 
-``Web2Vec`` (Network centrality library) is a tool to compute a wide range of centrality measures for a given network. The
-library is designed to work with Python Networkx library.
+``Web2Vec`` is a comprehensive library designed to convert websites into vector parameters. It provides ready-to-use implementations of web crawlers using Scrapy, making it accessible for less experienced researchers. This tool is invaluable for website analysis tasks, including SEO, disinformation detection, and phishing identification.
+
 
 .. toctree::
    :maxdepth: 2
@@ -28,5 +23,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _`Source`: https://github.com/damianfraszczak/netcenlib
-.. _`Distribution`: https://pypi.org/project/netcenlib/
+.. _`Source`: https://github.com/damianfraszczak/web2vec
+.. _`Distribution`: https://pypi.org/project/web2vec/
