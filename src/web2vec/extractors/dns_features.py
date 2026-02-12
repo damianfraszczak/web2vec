@@ -21,6 +21,10 @@ class DNSRecordFeatures:
 class DNSFeatures:
     domain: str
     records: List[DNSRecordFeatures] = field(default_factory=list)
+    min_ttl: Optional[int] = field(init=False, default=None)
+    ttl_expires_within_hour: Optional[bool] = field(init=False, default=None)
+    ttl_expires_within_day: Optional[bool] = field(init=False, default=None)
+    ttl_expires_within_week: Optional[bool] = field(init=False, default=None)
 
     @property
     def count_ips(self) -> int:
@@ -40,12 +44,34 @@ class DNSFeatures:
         mx_records = [record for record in self.records if record.record_type == "MX"]
         return len(mx_records[0].values) if mx_records else 0
 
+    def _address_record_ttls(self) -> List[int]:
+        return [
+            record.ttl
+            for record in self.records
+            if record.record_type in ["A", "AAAA"] and record.ttl is not None
+        ]
+
+    def compute_derived_features(self) -> None:
+        """Populate TTL-based indicators for downstream ML usage."""
+        ttl_values = self._address_record_ttls()
+        self.min_ttl = min(ttl_values) if ttl_values else None
+
+        if self.min_ttl is None:
+            self.ttl_expires_within_hour = None
+            self.ttl_expires_within_day = None
+            self.ttl_expires_within_week = None
+            return
+
+        self.ttl_expires_within_hour = self.min_ttl <= 3600  # 1 hour
+        self.ttl_expires_within_day = self.min_ttl <= 86400  # 24 hours
+        self.ttl_expires_within_week = self.min_ttl <= 604800  # 7 days
+
     @property
     def extract_ttl(self) -> Optional[int]:
         """Return Time-to-live (TTL) value associated with hostname."""
-        ttl_records = [
-            record.ttl for record in self.records if record.record_type in ["A", "AAAA"]
-        ]
+        if self.min_ttl is not None:
+            return self.min_ttl
+        ttl_records = self._address_record_ttls()
         return ttl_records[0] if ttl_records else None
 
 
@@ -71,6 +97,7 @@ def get_dns_features(domain: str) -> DNSFeatures:
                 )
     except Exception as e:  # noqa
         logger.warning(f"General error fetching DNS records for {domain}: {e}", e)
+    dns_result.compute_derived_features()
     return dns_result
 
 

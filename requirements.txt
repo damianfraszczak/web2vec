@@ -1,5 +1,6 @@
 scrapy
 networkx
+requests
 beautifulsoup4
 matplotlib
 scipy
@@ -12,5 +13,3 @@ webdriver-manager
 dnspython
 pydantic
 pydantic_settings
-requests
-pytest
