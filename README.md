@@ -514,16 +514,8 @@ print(entry)
 ## Testing
 Run the extractor-focused unit tests to make sure recent DNS/WHOIS/SSL additions and supporting modules behave deterministically:
 ```bash
-python -m pytest tests/test_dns_features.py \
-                 tests/test_whois_features.py \
-                 tests/test_ssl_certification_features.py \
-                 tests/test_html_body_features.py \
-                 tests/test_http_response_features.py \
-                 tests/test_network_features.py \
-                 tests/test_url_geo_features.py \
-                 tests/test_url_lexical_features.py
+python -m pytest
 ```
-Each extractor now has a dedicated test module so regressions in derived properties (e.g., TTL proximity flags or certificate issuer signals) are caught quickly.
 
 
 ## Contributing

@@ -1,3 +1,3 @@
-"""web2vec package version."""
+"""website2vector (web2vec) package version."""
 
 __version__ = "0.2.0"
