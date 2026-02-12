@@ -25,8 +25,8 @@ def get_google_index_features(url: str) -> GoogleIndexFeatures:
         "Accept": "application/json",
         "X-Subscription-Token": api_key,
     }
-    query = f"site:{url}"
-    api_url = f"https://api.search.brave.com/res/v1/web/search?q={query}"
+    query = f"site:{url}"  # noqa
+    api_url = f"https://api.search.brave.com/res/v1/web/search?q={query}"  # noqa
 
     try:
         response = requests.get(api_url, headers=headers, timeout=config.api_timeout)
@@ -38,7 +38,7 @@ def get_google_index_features(url: str) -> GoogleIndexFeatures:
             if url in link:
                 return GoogleIndexFeatures(is_indexed=True, position=index)
         return GoogleIndexFeatures(is_indexed=False, position=None)
-    except Exception as e:
+    except Exception as e:  # noqa
         logger.error(f"Error checking Brave index: {e}", exc_info=True)
         return GoogleIndexFeatures(is_indexed=None, position=None)
 
