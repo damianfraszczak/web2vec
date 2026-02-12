@@ -64,6 +64,7 @@ D. Frąszczak, E. Frąszczak. Web2Vec: A python library for website-to-vector tr
  - Phish Tank
  - Similar Web
  - URL House
+- Temporal Risk Signals: Derived TTL, creation, and expiration proximity indicators across DNS, WHOIS, and SSL outputs to plug directly into ML pipelines.
 
 By using this library, you can easily collect and analyze almost 200 parameters to describe a website comprehensively.
 
@@ -119,6 +120,15 @@ class DNSRecordFeatures:
     ttl: int
     values: List[str]
 
+@dataclass
+class DNSFeatures:
+    domain: str
+    records: List[DNSRecordFeatures]
+    min_ttl: Optional[int]
+    ttl_expires_within_hour: Optional[bool]
+    ttl_expires_within_day: Optional[bool]
+    ttl_expires_within_week: Optional[bool]
+
 ```
 ### HTTP Response parameters
 ```python
@@ -159,6 +169,17 @@ class CertificateFeatures:
     validity_message: str
     is_trusted: bool
     trust_message: str
+    issuer_common_name: Optional[str]
+    issuer_organization_name: Optional[str]
+    issuer_is_lets_encrypt: Optional[bool]
+    issuer_is_free_ca: Optional[bool]
+    validity_duration_days: Optional[int]
+    days_until_expiration: Optional[int]
+    expires_within_7_days: Optional[bool]
+    expires_within_30_days: Optional[bool]
+    valid_in_7_days: Optional[bool]
+    valid_in_30_days: Optional[bool]
+    is_expired: Optional[bool]
 
 ```
 ### URL related geographical location
@@ -281,6 +302,15 @@ class WhoisFeatures:
     zipcode: Optional[str]
     country: Optional[str]
     raw: Dict = field(default_factory=dict)
+    creation_datetime: Optional[datetime] = None
+    expiration_datetime: Optional[datetime] = None
+    domain_age_days: Optional[int] = None
+    days_until_expiration: Optional[int] = None
+    expires_within_7_days: Optional[bool] = None
+    expires_within_30_days: Optional[bool] = None
+    created_within_30_days: Optional[bool] = None
+    created_within_365_days: Optional[bool] = None
+    is_expired: Optional[bool] = None
 ```
 ### Google Index
 ```python
@@ -480,6 +510,20 @@ domain_to_check = "down.pcclear.com"
 entry = w2v.get_similar_web_features(domain_to_check)
 print(entry)
 ```
+
+## Testing
+Run the extractor-focused unit tests to make sure recent DNS/WHOIS/SSL additions and supporting modules behave deterministically:
+```bash
+python -m pytest tests/test_dns_features.py \
+                 tests/test_whois_features.py \
+                 tests/test_ssl_certification_features.py \
+                 tests/test_html_body_features.py \
+                 tests/test_http_response_features.py \
+                 tests/test_network_features.py \
+                 tests/test_url_geo_features.py \
+                 tests/test_url_lexical_features.py
+```
+Each extractor now has a dedicated test module so regressions in derived properties (e.g., TTL proximity flags or certificate issuer signals) are caught quickly.
 
 
 ## Contributing

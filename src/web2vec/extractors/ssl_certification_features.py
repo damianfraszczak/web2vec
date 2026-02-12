@@ -1,10 +1,10 @@
 import logging
 import socket
 import ssl
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from functools import cache
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import idna
 import requests
@@ -12,6 +12,53 @@ import requests
 from web2vec.config import config
 
 logger = logging.getLogger(__name__)
+
+FREE_CA_KEYWORDS = {
+    "let's encrypt",
+    "zerossl",
+    "zero ssl",
+    "buypass",
+    "ssl.com free",
+    "certbot",
+}
+
+
+def _flatten_name_entries(name_value: Any) -> Dict[str, str]:
+    """Convert subject/issuer structures from ssl certs into a flat dict."""
+    flat: Dict[str, str] = {}
+    if isinstance(name_value, dict):
+        for key, value in name_value.items():
+            if isinstance(value, str):
+                flat[key] = value
+        return flat
+    if isinstance(name_value, (tuple, list)):
+        for rdn in name_value:
+            if isinstance(rdn, (tuple, list)):
+                for attr in rdn:
+                    if (
+                        isinstance(attr, (tuple, list))
+                        and len(attr) >= 2
+                        and isinstance(attr[0], str)
+                        and isinstance(attr[1], str)
+                    ):
+                        flat[attr[0]] = attr[1]
+    return flat
+
+
+def _identify_known_ca(flat_name: Dict[str, str]) -> Optional[str]:
+    """Return None; helper retained only for backwards compatibility."""
+    return None
+
+
+def _first_value(flat_name: Dict[str, str], keys: Tuple[str, ...]) -> Optional[str]:
+    for key in keys:
+        if key in flat_name:
+            return flat_name[key]
+        # handle case-insensitive matches
+        for existing_key, value in flat_name.items():
+            if existing_key.lower() == key.lower():
+                return value
+    return None
 
 
 @dataclass
@@ -24,6 +71,70 @@ class CertificateFeatures:
     validity_message: str
     is_trusted: bool
     trust_message: str
+    issuer_common_name: Optional[str] = field(init=False, default=None)
+    issuer_organization_name: Optional[str] = field(init=False, default=None)
+    issuer_is_lets_encrypt: Optional[bool] = field(init=False, default=None)
+    issuer_is_free_ca: Optional[bool] = field(init=False, default=None)
+    validity_duration_days: Optional[int] = field(init=False, default=None)
+    days_until_expiration: Optional[int] = field(init=False, default=None)
+    expires_within_7_days: Optional[bool] = field(init=False, default=None)
+    expires_within_30_days: Optional[bool] = field(init=False, default=None)
+    valid_in_7_days: Optional[bool] = field(init=False, default=None)
+    valid_in_30_days: Optional[bool] = field(init=False, default=None)
+    is_expired: Optional[bool] = field(init=False, default=None)
+
+    def __post_init__(self) -> None:
+        self._compute_temporal_features()
+        self._compute_issuer_features()
+
+    def _has_certificate_window(self) -> bool:
+        return self.not_before != datetime.min and self.not_after != datetime.min
+
+    def _compute_temporal_features(self) -> None:
+        if not self._has_certificate_window():
+            self.validity_duration_days = None
+            self.days_until_expiration = None
+            self.expires_within_7_days = None
+            self.expires_within_30_days = None
+            self.valid_in_7_days = None
+            self.valid_in_30_days = None
+            self.is_expired = None
+            return
+
+        self.validity_duration_days = (self.not_after - self.not_before).days
+        now = datetime.utcnow()
+        remaining = self.not_after - now
+        self.days_until_expiration = remaining.days
+        self.is_expired = remaining.total_seconds() < 0
+        self.expires_within_7_days = 0 <= remaining.days <= 7
+        self.expires_within_30_days = 0 <= remaining.days <= 30
+        self.valid_in_7_days = self._is_valid_on_date(now + timedelta(days=7))
+        self.valid_in_30_days = self._is_valid_on_date(now + timedelta(days=30))
+
+    def _is_valid_on_date(self, target_date: datetime) -> bool:
+        if not self._has_certificate_window():
+            return False
+        return self.not_before <= target_date <= self.not_after
+
+    def _compute_issuer_features(self) -> None:
+        issuer_flat = _flatten_name_entries(self.issuer)
+        if not issuer_flat:
+            self.issuer_common_name = None
+            self.issuer_organization_name = None
+            self.issuer_is_lets_encrypt = None
+            self.issuer_is_free_ca = None
+            return
+
+        self.issuer_common_name = _first_value(issuer_flat, ("commonName", "CN"))
+        self.issuer_organization_name = _first_value(
+            issuer_flat, ("organizationName", "O")
+        )
+        combined = " ".join(value.lower() for value in issuer_flat.values())
+        is_lets_encrypt = "let's encrypt" in combined or "lets encrypt" in combined
+        self.issuer_is_lets_encrypt = is_lets_encrypt
+        self.issuer_is_free_ca = any(
+            keyword in combined for keyword in FREE_CA_KEYWORDS
+        )
 
 
 def get_tls_certificate(hostname: str, port: int = 443) -> Dict[str, Any]:
