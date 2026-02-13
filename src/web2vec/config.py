@@ -20,6 +20,7 @@ class Config(BaseSettings):
     api_timeout: int = 60
     crawler_output_path: str = ""
     crawler_spider_depth_limit: int = 5
+    dns_resolver_timeout: int = 1
 
     @field_validator("remote_url_output_path", "crawler_output_path", mode="before")
     @classmethod
