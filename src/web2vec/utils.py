@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ipaddress
 import json
 import logging
@@ -16,6 +18,16 @@ from web2vec.config import config
 logger = logging.getLogger(__name__)
 
 DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0"}
+_SESSION: requests.Session | None = None
+
+
+def _get_session() -> requests.Session:
+    global _SESSION
+    if _SESSION is None:
+        session = requests.Session()
+        session.headers.update(DEFAULT_HEADERS)
+        _SESSION = session
+    return _SESSION
 
 
 def valid_ip(host: str) -> bool:
@@ -89,15 +101,19 @@ def get_file_path_for_url(url, directory=None, timeout=86400) -> str:
 def fetch_url(url, headers=None, ssl_verify=False):
     """Fetch the given URL and return the response."""
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    headers = headers or {}
-    headers = {**DEFAULT_HEADERS, **headers}
-    return requests.get(
-        url,
-        headers=headers,
-        timeout=config.api_timeout,
-        allow_redirects=True,
-        verify=ssl_verify,
-    )
+    headers = {**DEFAULT_HEADERS, **(headers or {})}
+    session = _get_session()
+    try:
+        return session.get(
+            url,
+            headers=headers,
+            timeout=config.api_timeout,
+            allow_redirects=True,
+            verify=ssl_verify,
+        )
+    except requests.RequestException as exc:
+        logger.error("HTTP request failed for %s: %s", url, exc)
+        raise
 
 
 def fetch_file_from_url(url, directory=None, headers=None, timeout=86400) -> str:

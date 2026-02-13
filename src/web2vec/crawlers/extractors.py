@@ -1,5 +1,5 @@
 import logging
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass
 from typing import List
 
 from requests import Response as ReqResponse
@@ -223,6 +223,15 @@ def process_extractors(
         for extractor in extractors:
             try:
                 result = extractor.extract_features(response)
+                if result is None:
+                    continue
+                if not is_dataclass(result):
+                    logger.warning(
+                        "Extractor %s returned non-dataclass result %s; skipping",
+                        extractor.features_name(),
+                        type(result).__name__,
+                    )
+                    continue
                 result_as_dict = asdict(result)
                 extractors_result.update(
                     {

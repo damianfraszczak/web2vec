@@ -52,9 +52,11 @@ class HtmlBodyFeatures:
     copyright: Optional[str] = None
 
 
-def check_obfuscated_scripts(soup: BeautifulSoup) -> bool:
+def check_obfuscated_scripts(
+    soup: BeautifulSoup, scripts: Optional[List[Any]] = None
+) -> bool:
     """Check if the response contains any obfuscated scripts."""
-    scripts = soup.find_all("script")
+    scripts = scripts if scripts is not None else soup.find_all("script")
     for script in scripts:
         if script.get("src") and (
             "eval(" in script["src"] or "document.write(" in script["src"]
@@ -64,7 +66,9 @@ def check_obfuscated_scripts(soup: BeautifulSoup) -> bool:
 
 
 def check_suspicious_keywords(
-    soup: BeautifulSoup, keywords: Optional[List[str]] = None
+    soup: BeautifulSoup,
+    keywords: Optional[List[str]] = None,
+    page_text: Optional[str] = None,
 ) -> bool:
     """Check if the response contains any suspicious keywords."""
     suspicious_keywords = keywords or [
@@ -75,13 +79,16 @@ def check_suspicious_keywords(
         "bank",
         "account",
     ]
-    page_content = soup.get_text().lower()
+    page_content = (
+        page_text.lower() if page_text is not None else soup.get_text().lower()
+    )
     return any(keyword in page_content for keyword in suspicious_keywords)
 
 
-def body_length(soup: BeautifulSoup) -> int:
+def body_length(soup: BeautifulSoup, text_content: Optional[str] = None) -> int:
     """Get the length of the body text in the given HTML content."""
-    return len(soup.get_text())
+    content = text_content if text_content is not None else soup.get_text()
+    return len(content)
 
 
 def num_titles(soup: BeautifulSoup) -> int:
@@ -106,30 +113,50 @@ def script_length(soup: BeautifulSoup) -> int:
     return len(soup.find_all("script"))
 
 
-def special_characters(soup: BeautifulSoup) -> int:
+def special_characters(soup: BeautifulSoup, text_content: Optional[str] = None) -> int:
     """Get the number of special characters in the given HTML content."""
-    body_text = soup.get_text()
+    body_text = text_content if text_content is not None else soup.get_text()
     return len([c for c in body_text if not c.isalnum() and not c.isspace()])
 
 
-def script_to_special_chars_ratio(soup: BeautifulSoup) -> float:
+def script_to_special_chars_ratio(
+    soup: BeautifulSoup,
+    special_char_count: Optional[int] = None,
+    script_count: Optional[int] = None,
+) -> float:
     """Get the ratio of script length to special characters in the given HTML content."""
-    schars = special_characters(soup)
-    slength = script_length(soup)
+    schars = (
+        special_char_count
+        if special_char_count is not None
+        else special_characters(soup)
+    )
+    slength = script_count if script_count is not None else script_length(soup)
     return slength / schars if schars > 0 else 0
 
 
-def script_to_body_ratio(soup: BeautifulSoup) -> float:
+def script_to_body_ratio(
+    soup: BeautifulSoup,
+    body_len: Optional[int] = None,
+    script_count: Optional[int] = None,
+) -> float:
     """Get the ratio of script length to body length in the given HTML content."""
-    blength = body_length(soup)
-    slength = script_length(soup)
+    blength = body_len if body_len is not None else body_length(soup)
+    slength = script_count if script_count is not None else script_length(soup)
     return slength / blength if blength > 0 else 0
 
 
-def body_to_special_char_ratio(soup: BeautifulSoup) -> float:
+def body_to_special_char_ratio(
+    soup: BeautifulSoup,
+    body_len: Optional[int] = None,
+    special_char_count: Optional[int] = None,
+) -> float:
     """Get the ratio of body length to special characters in the given HTML content."""
-    blength = body_length(soup)
-    schars = special_characters(soup)
+    blength = body_len if body_len is not None else body_length(soup)
+    schars = (
+        special_char_count
+        if special_char_count is not None
+        else special_characters(soup)
+    )
     return blength / schars if schars > 0 else 0
 
 
@@ -332,46 +359,162 @@ def get_html_body_features(body: str, url: str) -> HtmlBodyFeatures:
     """Extract HTML body features from the"""
     soup = BeautifulSoup(body, "html.parser")
     base_domain = get_domain_from_url(url)
+    page_text = soup.get_text()
+
+    def _safe_attr(tag, attr) -> str:
+        value = tag.get(attr)
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list) and value:
+            return value[0]
+        return ""
+
+    forms = soup.find_all("form")
+    forms_with_action = [form for form in forms if form.get("action")]
+    scripts = soup.find_all("script")
+    scripts_with_src = [script for script in scripts if script.get("src")]
+    styles = soup.find_all("link", rel="stylesheet")
+    styles_with_href = [style for style in styles if style.get("href")]
+    iframes = soup.find_all("iframe", src=True)
+    anchors = soup.find_all("a", href=True)
+    images = soup.find_all("img")
+    media = soup.find_all(["img", "video", "audio"], src=True)
+    headings = []
+    for i in range(7):
+        headings.extend(soup.find_all(f"h{i}"))
+
+    body_len = len(page_text)
+    special_char_count = len(
+        [c for c in page_text if not c.isalnum() and not c.isspace()]
+    )
+    script_len = len(scripts)
+
+    def _netloc(value: str) -> str:
+        return urlparse(value or "").netloc
 
     return HtmlBodyFeatures(
-        contains_forms=bool(soup.find_all("form")),
-        contains_obfuscated_scripts=check_obfuscated_scripts(soup),
-        contains_suspicious_keywords=check_suspicious_keywords(soup),
-        body_length=body_length(soup),
-        num_titles=num_titles(soup),
-        num_images=num_images(soup),
-        num_links=num_links(soup),
-        script_length=script_length(soup),
-        special_characters=special_characters(soup),
-        script_to_special_chars_ratio=script_to_special_chars_ratio(soup),
-        script_to_body_ratio=script_to_body_ratio(soup),
-        body_to_special_char_ratio=body_to_special_char_ratio(soup),
+        contains_forms=bool(forms),
+        contains_obfuscated_scripts=check_obfuscated_scripts(soup, scripts),
+        contains_suspicious_keywords=check_suspicious_keywords(
+            soup, page_text=page_text
+        ),
+        body_length=body_len,
+        num_titles=len(headings),
+        num_images=len(images),
+        num_links=len(anchors),
+        script_length=script_len,
+        special_characters=special_char_count,
+        script_to_special_chars_ratio=script_to_special_chars_ratio(
+            soup, special_char_count, script_len
+        ),
+        script_to_body_ratio=script_to_body_ratio(soup, body_len, script_len),
+        body_to_special_char_ratio=body_to_special_char_ratio(
+            soup, body_len, special_char_count
+        ),
         iframe_redirection=iframe_redirection(soup),
         mouse_over_effect=mouse_over_effect(soup),
         right_click_disabled=right_click_disabled(soup),
-        num_scripts_http=num_scripts_http(soup),
-        num_styles_http=num_styles_http(soup),
-        num_iframes_http=num_iframes_http(soup),
-        num_external_scripts=num_external_scripts(soup, base_domain),
-        num_external_styles=num_external_styles(soup, base_domain),
-        num_external_iframes=num_external_iframes(soup, base_domain),
+        num_scripts_http=len(
+            [
+                script
+                for script in scripts_with_src
+                if _safe_attr(script, "src").startswith("http://")
+            ]
+        ),
+        num_styles_http=len(
+            [
+                style
+                for style in styles_with_href
+                if _safe_attr(style, "href").startswith("http://")
+            ]
+        ),
+        num_iframes_http=len(
+            [
+                iframe
+                for iframe in iframes
+                if _safe_attr(iframe, "src").startswith("http://")
+            ]
+        ),
+        num_external_scripts=len(
+            [
+                script
+                for script in scripts_with_src
+                if _netloc(_safe_attr(script, "src"))
+                and _netloc(_safe_attr(script, "src")) != base_domain
+            ]
+        ),
+        num_external_styles=len(
+            [
+                style
+                for style in styles_with_href
+                if _netloc(_safe_attr(style, "href"))
+                and _netloc(_safe_attr(style, "href")) != base_domain
+            ]
+        ),
+        num_external_iframes=len(
+            [
+                iframe
+                for iframe in iframes
+                if _netloc(_safe_attr(iframe, "src"))
+                and _netloc(_safe_attr(iframe, "src")) != base_domain
+            ]
+        ),
         num_meta_tags=num_meta_tags(soup),
-        num_forms=num_forms(soup),
-        num_forms_post=num_forms_post(soup),
-        num_forms_get=num_forms_get(soup),
-        num_forms_external_action=num_forms_external_action(soup, base_domain),
+        num_forms=len(forms),
+        num_forms_post=len(
+            [form for form in forms if form.get("method", "").lower() == "post"]
+        ),
+        num_forms_get=len(
+            [form for form in forms if form.get("method", "").lower() == "get"]
+        ),
+        num_forms_external_action=len(
+            [
+                form
+                for form in forms_with_action
+                if _netloc(_safe_attr(form, "action"))
+                and _netloc(_safe_attr(form, "action")) != base_domain
+            ]
+        ),
         num_hidden_elements=hidden_elements(soup),
-        num_safe_anchors=num_safe_anchors(soup, base_domain),
-        num_media_http=num_media_http(soup),
-        num_media_external=num_media_external(soup, base_domain),
-        num_email_forms=num_email_forms(soup),
-        num_internal_links=num_internal_links(soup, base_domain),
+        num_safe_anchors=len(
+            [
+                anchor
+                for anchor in anchors
+                if _netloc(_safe_attr(anchor, "href")) == base_domain
+                or not _netloc(_safe_attr(anchor, "href"))
+            ]
+        ),
+        num_media_http=len(
+            [item for item in media if _safe_attr(item, "src").startswith("http://")]
+        ),
+        num_media_external=len(
+            [
+                item
+                for item in media
+                if _netloc(_safe_attr(item, "src"))
+                and _netloc(_safe_attr(item, "src")) != base_domain
+            ]
+        ),
+        num_email_forms=len(
+            [
+                form
+                for form in forms_with_action
+                if _safe_attr(form, "action").startswith("mailto:")
+            ]
+        ),
+        num_internal_links=len(
+            [
+                anchor
+                for anchor in anchors
+                if _netloc(_safe_attr(anchor, "href")) == base_domain
+            ]
+        ),
         favicon_url=find_favicon(soup),
         logo_url=find_logo(soup),
-        found_forms=[form.attrs for form in soup.find_all("form")],
-        found_images=[img.attrs for img in soup.find_all("img")],
-        found_anchors=[a.attrs for a in soup.find_all("a")],
-        found_media=[m.attrs for m in soup.find_all(["img", "video", "audio"])],
+        found_forms=[form.attrs for form in forms],
+        found_images=[img.attrs for img in images],
+        found_anchors=[a.attrs for a in anchors],
+        found_media=[m.attrs for m in media],
         copyright=find_copyright(soup),
     )
 
