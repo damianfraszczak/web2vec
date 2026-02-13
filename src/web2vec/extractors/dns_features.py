@@ -1,19 +1,17 @@
 import asyncio
 import logging
+import time
 from dataclasses import dataclass, field
 from functools import cache
 from typing import List, Optional, Tuple
 
-import dns.asyncresolver
 import dns.exception
 import dns.resolver
 
-from web2vec.config import config
 from web2vec.utils import get_domain_from_url
 
 logger = logging.getLogger(__name__)
 DNS_RECORD_TYPES = ["A", "AAAA", "MX", "TXT", "NS", "CNAME"]
-_ASYNC_RESOLVER: dns.asyncresolver.Resolver | None = None
 
 
 @dataclass
@@ -31,6 +29,8 @@ class DNSFeatures:
     ttl_expires_within_hour: Optional[bool] = field(init=False, default=None)
     ttl_expires_within_day: Optional[bool] = field(init=False, default=None)
     ttl_expires_within_week: Optional[bool] = field(init=False, default=None)
+    time_response: Optional[float] = field(init=False, default=None)
+    domain_spf: Optional[bool] = field(init=False, default=None)
 
     @property
     def count_ips(self) -> int:
@@ -81,21 +81,14 @@ class DNSFeatures:
         return ttl_records[0] if ttl_records else None
 
 
-def _get_async_resolver() -> dns.asyncresolver.Resolver:
-    global _ASYNC_RESOLVER
-    if _ASYNC_RESOLVER is None:
-        resolver = dns.asyncresolver.Resolver(configure=True)
-        resolver.timeout = config.dns_resolver_timeout
-        _ASYNC_RESOLVER = resolver
-    return _ASYNC_RESOLVER
-
-
 async def _resolve_record(
     domain: str, record_type: str
 ) -> Tuple[str, Optional[dns.resolver.Answer], Optional[Exception]]:
-    resolver = _get_async_resolver()
+    def _sync_resolve():
+        return dns.resolver.resolve(domain, record_type)
+
     try:
-        answers = await resolver.resolve(domain, record_type)
+        answers = await asyncio.to_thread(_sync_resolve)
         return record_type, answers, None
     except Exception as exc:  # noqa
         return record_type, None, exc
@@ -119,7 +112,10 @@ def get_dns_features(domain: str) -> DNSFeatures:
     """Get DNS features for the given domain."""
     dns_result = DNSFeatures(domain=domain)
     try:
+        start = time.perf_counter()
         results = _run_dns_tasks(domain)
+        dns_result.time_response = time.perf_counter() - start
+        spf_detected: Optional[bool] = None
         for record_type, answers, error in results:
             if answers:
                 record_values = [rdata.to_text() for rdata in answers]
@@ -127,6 +123,12 @@ def get_dns_features(domain: str) -> DNSFeatures:
                 dns_result.records.append(
                     DNSRecordFeatures(record_type, ttl, record_values)
                 )
+                if record_type == "TXT":
+                    has_spf = any("v=spf1" in value.lower() for value in record_values)
+                    if spf_detected is None:
+                        spf_detected = has_spf
+                    else:
+                        spf_detected = spf_detected or has_spf
                 continue
 
             if isinstance(error, dns.resolver.NoAnswer):
@@ -146,6 +148,10 @@ def get_dns_features(domain: str) -> DNSFeatures:
                 )
     except Exception as e:  # noqa
         logger.warning("General error fetching DNS records for %s: %s", domain, e)
+        dns_result.time_response = None
+        dns_result.domain_spf = None
+    else:
+        dns_result.domain_spf = spf_detected if spf_detected is not None else False
     dns_result.compute_derived_features()
     return dns_result
 

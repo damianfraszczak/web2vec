@@ -43,6 +43,12 @@ def tld_count(string: str) -> int:
     return string.lower().count(f".{tld}") if tld else 0
 
 
+def tld_length(string: str) -> int:
+    """Return the length of the TLD in the given URL."""
+    extracted = tldextract.extract(string)
+    return len(extracted.suffix) if extracted.suffix else 0
+
+
 def url_depth(url):
     """Calculate the depth of the URL."""
     return len([segment for segment in urlparse(url).path.split("/") if segment])
@@ -82,6 +88,7 @@ class URLLexicalFeatures:
     count_dollar_url: int
     count_percent_url: int
     url_length: int
+    tld_length_url: int
     tld_amount_url: int
     count_dot_domain: int
     count_dash_domain: int
@@ -122,6 +129,24 @@ class URLLexicalFeatures:
     count_dollar_directory: int
     count_percent_directory: int
     directory_length: int
+    count_dot_file: int
+    count_dash_file: int
+    count_underscore_file: int
+    count_slash_file: int
+    count_question_file: int
+    count_equals_file: int
+    count_at_file: int
+    count_ampersand_file: int
+    count_exclamation_file: int
+    count_space_file: int
+    count_tilde_file: int
+    count_comma_file: int
+    count_plus_file: int
+    count_asterisk_file: int
+    count_hash_file: int
+    count_dollar_file: int
+    count_percent_file: int
+    file_length: int
     count_dot_parameters: int
     count_dash_parameters: int
     count_underscore_parameters: int
@@ -156,6 +181,7 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
     path = parsed_url.path
     query = parsed_url.query
     directory = "/".join(path.split("/")[:-1])
+    file_name = path.split("/")[-1] if path else ""
 
     features = URLLexicalFeatures(
         count_dot_url=count_char(".", url),
@@ -176,6 +202,7 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
         count_dollar_url=count_char("$", url),
         count_percent_url=count_char("%", url),
         url_length=len(url),
+        tld_length_url=tld_length(url),
         tld_amount_url=tld_count(url),
         count_dot_domain=count_char(".", domain),
         count_dash_domain=count_char("-", domain),
@@ -216,6 +243,24 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
         count_dollar_directory=count_char("$", directory),
         count_percent_directory=count_char("%", directory),
         directory_length=len(directory),
+        count_dot_file=count_char(".", file_name),
+        count_dash_file=count_char("-", file_name),
+        count_underscore_file=count_char("_", file_name),
+        count_slash_file=count_char("/", file_name),
+        count_question_file=count_char("?", file_name),
+        count_equals_file=count_char("=", file_name),
+        count_at_file=count_char("@", file_name),
+        count_ampersand_file=count_char("&", file_name),
+        count_exclamation_file=count_char("!", file_name),
+        count_space_file=count_char(" ", file_name),
+        count_tilde_file=count_char("~", file_name),
+        count_comma_file=count_char(",", file_name),
+        count_plus_file=count_char("+", file_name),
+        count_asterisk_file=count_char("*", file_name),
+        count_hash_file=count_char("#", file_name),
+        count_dollar_file=count_char("$", file_name),
+        count_percent_file=count_char("%", file_name),
+        file_length=len(file_name),
         count_dot_parameters=count_char(".", query),
         count_dash_parameters=count_char("-", query),
         count_underscore_parameters=count_char("_", query),
