@@ -39,6 +39,14 @@ def check_redirects(response: requests.Response) -> bool:
     return len(getattr(response, "history", [])) > 0
 
 
+def _get_status_code(response: requests.Response) -> Optional[int]:
+    """Return the best-effort HTTP status code from the response object."""
+    status_code = getattr(response, "status_code", None)
+    if status_code is None:
+        status_code = getattr(response, "status", None)
+    return status_code
+
+
 def count_redirects(response: requests.Response) -> int:
     """Count the number of redirects in the response."""
     return len(getattr(response, "history", []))
@@ -110,7 +118,13 @@ def check_header_x_content_type_options(response: requests.Response) -> bool:
 
 def is_live(response: requests.Response) -> bool:
     """Check if the response is live."""
-    return response.status_code == 200
+    status_code = _get_status_code(response)
+    if status_code is None:
+        return False
+    try:
+        return int(status_code) == 200
+    except (TypeError, ValueError):
+        return False
 
 
 def check_server_version(response: requests.Response) -> Optional[str]:

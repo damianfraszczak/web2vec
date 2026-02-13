@@ -6,6 +6,7 @@ import scrapy
 from scrapy.http import Response
 
 from web2vec.config import config
+from web2vec.crawlers.extractors import Extractor
 from web2vec.crawlers.models import WebPage
 from web2vec.utils import sanitize_filename, store_json
 
@@ -25,10 +26,21 @@ class Web2VecSpider(scrapy.Spider):
         super(Web2VecSpider, self).__init__(*args, **kwargs)
         self.start_urls = start_urls
         self.allowed_domains = allowed_domains or []
-        self.extractors = extractors or []
+        self.extractors = [
+            self._ensure_extractor_instance(extractor)
+            for extractor in (extractors or [])
+        ]
         if custom_settings:
             for key, value in custom_settings.items():
                 setattr(self, key, value)
+
+    def _ensure_extractor_instance(self, extractor):
+        """Return an initialized extractor instance."""
+        if isinstance(extractor, Extractor):
+            return extractor
+        if isinstance(extractor, type) and issubclass(extractor, Extractor):
+            return extractor()
+        return extractor
 
     def parse(self, response: Response, **kwargs: Any) -> Any:
         page = WebPage(response.url, response.text)

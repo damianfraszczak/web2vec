@@ -104,7 +104,15 @@ class HttpResponseExtractor(Extractor):
     def extract_features(
         self, response: Response | ReqResponse
     ) -> HttpResponseFeatures:
-        response.status_code = getattr(response, "status", response.status_code)
+        if not hasattr(response, "status_code") and hasattr(response, "status"):
+            try:
+                response.status_code = response.status
+            except AttributeError:
+                logger.debug(
+                    "Unable to mirror response.status (%s) into status_code for %s",
+                    getattr(response, "status", None),
+                    type(response).__name__,
+                )
         url = response.url
         return get_http_response_features(response=response, url=url)
 
@@ -219,6 +227,10 @@ def process_extractors(
     extractors_result = {}
     try:
         response = fetch_url(url)
+        try:
+            response_domain = get_domain_from_url(response.url)
+        except Exception:  # noqa
+            response_domain = response.url
 
         for extractor in extractors:
             try:
@@ -242,7 +254,10 @@ def process_extractors(
                 )
             except Exception as e:  # noqa
                 logger.warning(
-                    f"Error extracting features with {extractor.features_name()}: {e}"
+                    "Error extracting features with %s for domain %s: %s",
+                    extractor.features_name(),
+                    response_domain,
+                    e,
                 )
     except Exception as e:  # noqa
         logger.warning(f"Couldn't reach {url}. {e}")

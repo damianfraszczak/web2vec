@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import ipaddress
 import json
 import logging
@@ -171,6 +172,12 @@ def store_json(data: dict, file_path: str):
         def default(self, obj):
             if isinstance(obj, datetime):
                 return obj.isoformat()
+            if isinstance(obj, (bytes, bytearray)):
+                raw_bytes = bytes(obj)
+                try:
+                    return raw_bytes.decode("utf-8")
+                except UnicodeDecodeError:
+                    return base64.b64encode(raw_bytes).decode("ascii")
             return super().default(obj)
 
     with open(file_path, "w", encoding="utf-8") as f:
