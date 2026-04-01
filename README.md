@@ -111,6 +111,10 @@ class HtmlBodyFeatures:
     found_anchors: List[Dict[str, Any]] = field(default_factory=list)
     found_media: List[Dict[str, Any]] = field(default_factory=list)
     copyright: Optional[str] = None
+    source_mode: str = "raw_http"
+    was_js_rendered: bool = False
+    likely_js_spa: bool = False
+    html_snapshot_path: Optional[str] = None
 ```
 ### DNS parameters
 ```python
@@ -440,7 +444,12 @@ process.crawl(
     w2v.Web2VecSpider,
     start_urls=["http://quotes.toscrape.com/"], # pages to process
     allowed_domains=["quotes.toscrape.com"], # domains to process for links
-    extractors=w2v.ALL_EXTRACTORS, # extractors to use
+    extractors=[
+        w2v.HtmlBodyExtractor(
+            enable_js_render=True,           # optional Selenium render for JS/SPA pages
+            save_html_snapshot=True,         # optional save of analyzed HTML to .html file
+        )
+    ] + [e for e in w2v.ALL_EXTRACTORS if e.FEATURE_TYPE != "HTML"],
 )
 process.start()
 ```
