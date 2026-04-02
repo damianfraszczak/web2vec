@@ -62,6 +62,25 @@ def uses_shortening_service(url) -> Optional[str]:
     return re.search(services_lookup, url)
 
 
+def has_repeated_digits(value: str) -> bool:
+    """Return True when string contains 3+ repeated digits in sequence."""
+    return bool(re.search(r"(\d)\1{2,}", value))
+
+
+def numeric_chars_ratio(value: str) -> float:
+    """Return numeric chars percentage in range 0..100."""
+    if not value:
+        return 0.0
+    digits = sum(1 for char in value if char.isdigit())
+    return (digits / len(value)) * 100.0
+
+
+def token_count(value: str) -> int:
+    """Count lexical tokens split by non-alphanumeric separators."""
+    tokens = [token for token in re.split(r"[^A-Za-z0-9]+", value) if token]
+    return len(tokens)
+
+
 @dataclass
 class URLLexicalFeatures:
     count_dot_url: int
@@ -147,15 +166,58 @@ class URLLexicalFeatures:
     url_depth: int
     uses_shortening_service: Optional[str]
     is_ip: bool = False
+    number_of_subdomains: int = 0
+    average_subdomain_length: float = 0.0
+    having_hyphen_in_subdomain: bool = False
+    having_underscore_in_subdomain: bool = False
+    having_digit_in_subdomain: bool = False
+    having_special_char_in_subdomain: bool = False
+    having_fragment: bool = False
+    having_anchor: bool = False
+    entropy_of_url: float = 0.0
+    repeated_digits_url: bool = False
+    repeated_digits_domain: bool = False
+    repeated_digits_directory: bool = False
+    repeated_digits_parameters: bool = False
+    token_count: int = 0
+    subdomain_count: int = 0
+    tld_popularity: int = 0
+    suspicious_file_extension: bool = False
+    percentage_numeric_chars: float = 0.0
+    url_shortened: bool = False
+    server_client_domain: bool = False
 
 
 def get_url_lexical_features(url: str) -> URLLexicalFeatures:
     """Get the lexical features for the given URL."""
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
+    hostname = parsed_url.hostname or domain
     path = parsed_url.path
     query = parsed_url.query
     directory = "/".join(path.split("/")[:-1])
+    subdomain = tldextract.extract(hostname).subdomain
+    subdomain_parts = [part for part in subdomain.split(".") if part]
+    average_subdomain_length = (
+        sum(len(part) for part in subdomain_parts) / len(subdomain_parts)
+        if subdomain_parts
+        else 0.0
+    )
+    url_shortening_match = uses_shortening_service(url)
+    tld_suffix = tldextract.extract(hostname).suffix.lower()
+    popular_tlds = {"com", "org", "net", "edu", "gov", "io", "co", "pl"}
+    suspicious_extensions = {
+        ".exe",
+        ".scr",
+        ".bat",
+        ".cmd",
+        ".js",
+        ".jar",
+        ".vbs",
+        ".ps1",
+        ".zip",
+        ".rar",
+    }
 
     features = URLLexicalFeatures(
         count_dot_url=count_char(".", url),
@@ -241,8 +303,30 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
         ),
         domain_entropy=entropy(domain),
         url_depth=url_depth(url),
-        uses_shortening_service=uses_shortening_service(url),
+        uses_shortening_service=url_shortening_match,
         is_ip=valid_ip(domain),
+        number_of_subdomains=len(subdomain_parts),
+        average_subdomain_length=average_subdomain_length,
+        having_hyphen_in_subdomain="-" in subdomain,
+        having_underscore_in_subdomain="_" in subdomain,
+        having_digit_in_subdomain=any(char.isdigit() for char in subdomain),
+        having_special_char_in_subdomain=bool(re.search(r"[^A-Za-z0-9.-]", subdomain)),
+        having_fragment=bool(parsed_url.fragment),
+        having_anchor=bool(parsed_url.fragment),
+        entropy_of_url=entropy(url),
+        repeated_digits_url=has_repeated_digits(url),
+        repeated_digits_domain=has_repeated_digits(hostname),
+        repeated_digits_directory=has_repeated_digits(directory),
+        repeated_digits_parameters=has_repeated_digits(query),
+        token_count=token_count(url),
+        subdomain_count=len(subdomain_parts),
+        tld_popularity=1 if tld_suffix in popular_tlds else 0,
+        suspicious_file_extension=any(
+            path.lower().endswith(ext) for ext in suspicious_extensions
+        ),
+        percentage_numeric_chars=numeric_chars_ratio(url),
+        url_shortened=url_shortening_match is not None,
+        server_client_domain=contains_keywords(domain, ["server", "client"]),
     )
 
     return features

@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from datetime import timedelta
 
 from web2vec.extractors.http_response_features import (
     get_http_response_features,
@@ -24,6 +25,7 @@ def make_response():
         headers={"Server": "nginx", "X-Frame-Options": "DENY"},
         status_code=200,
         history=[object()],
+        elapsed=timedelta(milliseconds=250),
     )
 
 
@@ -44,3 +46,4 @@ def test_http_response_feature_extraction():
     assert features.server_version == "nginx"
     assert features.num_links == 1
     assert features.script_length == 1
+    assert features.time_response == 0.25

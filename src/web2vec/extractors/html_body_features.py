@@ -1,7 +1,7 @@
 import re
+from urllib.parse import urlparse
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse
 
 import requests
 import urllib3
@@ -55,6 +55,11 @@ class HtmlBodyFeatures:
     was_js_rendered: bool = False
     likely_js_spa: bool = False
     html_snapshot_path: Optional[str] = None
+    num_network_requests: int = 0
+    num_external_network_requests: int = 0
+    num_api_endpoints: int = 0
+    found_network_requests: List[str] = field(default_factory=list)
+    found_api_endpoints: List[str] = field(default_factory=list)
 
 
 def check_obfuscated_scripts(soup: BeautifulSoup) -> bool:
@@ -352,16 +357,41 @@ def detect_likely_js_spa(soup: BeautifulSoup) -> bool:
     return scripts_count >= 3 and text_len < 200 and has_noscript
 
 
+def is_external_url(url: str, base_domain: str) -> bool:
+    """Return True when URL points outside current page domain."""
+    parsed = urlparse(url)
+    if not parsed.netloc:
+        return False
+    return parsed.netloc != base_domain
+
+
+def detect_api_endpoints(urls: List[str]) -> List[str]:
+    """Return URLs that look like API/JSON endpoints."""
+    api_like = []
+    pattern = re.compile(r"(/api/|/graphql|/rest/|/v\d+/|[?&]format=json)", re.I)
+    for candidate in urls:
+        lowered = candidate.lower()
+        if lowered.endswith(".json") or pattern.search(lowered):
+            api_like.append(candidate)
+    return list(dict.fromkeys(api_like))
+
+
 def get_html_body_features(
     body: str,
     url: str,
     source_mode: str = "raw_http",
     was_js_rendered: bool = False,
     html_snapshot_path: Optional[str] = None,
+    network_request_urls: Optional[List[str]] = None,
 ) -> HtmlBodyFeatures:
     """Extract HTML body features from the"""
     soup = BeautifulSoup(body, "html.parser")
     base_domain = get_domain_from_url(url)
+    discovered_urls = list(dict.fromkeys(network_request_urls or []))
+    external_discovered = [
+        item for item in discovered_urls if is_external_url(item, base_domain)
+    ]
+    found_api_endpoints = detect_api_endpoints(discovered_urls)
 
     return HtmlBodyFeatures(
         contains_forms=bool(soup.find_all("form")),
@@ -407,6 +437,11 @@ def get_html_body_features(
         was_js_rendered=was_js_rendered,
         likely_js_spa=detect_likely_js_spa(soup),
         html_snapshot_path=html_snapshot_path,
+        num_network_requests=len(discovered_urls),
+        num_external_network_requests=len(external_discovered),
+        num_api_endpoints=len(found_api_endpoints),
+        found_network_requests=discovered_urls,
+        found_api_endpoints=found_api_endpoints,
     )
 
 

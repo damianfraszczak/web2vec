@@ -16,6 +16,8 @@ class GoogleIndexFeatures:
 
     is_indexed: Optional[bool]
     position: Optional[int] = None
+    url_google_index: Optional[bool] = None
+    domain_google_index: Optional[bool] = None
 
 
 def get_google_index_features(url: str) -> GoogleIndexFeatures:
@@ -36,11 +38,26 @@ def get_google_index_features(url: str) -> GoogleIndexFeatures:
         for index, result in enumerate(results, start=1):
             link = result.get("url", "")
             if url in link:
-                return GoogleIndexFeatures(is_indexed=True, position=index)
-        return GoogleIndexFeatures(is_indexed=False, position=None)
+                return GoogleIndexFeatures(
+                    is_indexed=True,
+                    position=index,
+                    url_google_index=True,
+                    domain_google_index=True,
+                )
+        return GoogleIndexFeatures(
+            is_indexed=False,
+            position=None,
+            url_google_index=False,
+            domain_google_index=False,
+        )
     except Exception as e:  # noqa
         logger.error(f"Error checking Brave index: {e}", exc_info=True)
-        return GoogleIndexFeatures(is_indexed=None, position=None)
+        return GoogleIndexFeatures(
+            is_indexed=None,
+            position=None,
+            url_google_index=None,
+            domain_google_index=None,
+        )
 
 
 @cache

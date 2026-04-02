@@ -52,6 +52,8 @@ class WhoisFeatures:
     created_within_30_days: Optional[bool] = field(init=False, default=None)
     created_within_365_days: Optional[bool] = field(init=False, default=None)
     is_expired: Optional[bool] = field(init=False, default=None)
+    time_domain_activation: Optional[int] = field(init=False, default=None)
+    time_domain_expiration: Optional[int] = field(init=False, default=None)
 
     def __post_init__(self) -> None:
         self.creation_datetime = self._normalize_datetime(self.creation_date)
@@ -61,21 +63,25 @@ class WhoisFeatures:
         if self.creation_datetime:
             age_delta = now - self.creation_datetime
             self.domain_age_days = age_delta.days
+            self.time_domain_activation = age_delta.days
             self.created_within_30_days = age_delta <= timedelta(days=30)
             self.created_within_365_days = age_delta <= timedelta(days=365)
         else:
             self.domain_age_days = None
+            self.time_domain_activation = None
             self.created_within_30_days = None
             self.created_within_365_days = None
 
         if self.expiration_datetime:
             expiration_delta = self.expiration_datetime - now
             self.days_until_expiration = expiration_delta.days
+            self.time_domain_expiration = expiration_delta.days
             self.is_expired = expiration_delta.total_seconds() < 0
             self.expires_within_7_days = 0 <= expiration_delta.days <= 7
             self.expires_within_30_days = 0 <= expiration_delta.days <= 30
         else:
             self.days_until_expiration = None
+            self.time_domain_expiration = None
             self.is_expired = None
             self.expires_within_7_days = None
             self.expires_within_30_days = None
