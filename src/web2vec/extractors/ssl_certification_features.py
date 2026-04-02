@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import idna
 import requests
+import urllib3
 
 from web2vec.config import config
 
@@ -190,7 +191,9 @@ def is_certificate_trusted(cert: Dict[str, Any]) -> Tuple[bool, str]:
 def check_ssl(url: str) -> bool:
     """Check if the SSL certificate of the URL is valid."""
     try:
-        requests.get(url, verify=True, timeout=config.api_timeout)
+        if not config.ssl_verify:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        requests.get(url, verify=config.ssl_verify, timeout=config.api_timeout)
         return True
     except Exception:  # noqa
         return False
