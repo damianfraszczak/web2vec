@@ -4,8 +4,10 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 import requests
+import urllib3
 from bs4 import BeautifulSoup
 
+from web2vec.config import config
 from web2vec.utils import get_domain_from_url
 
 
@@ -50,6 +52,15 @@ class HtmlBodyFeatures:
     found_anchors: List[Dict[str, Any]] = field(default_factory=list)
     found_media: List[Dict[str, Any]] = field(default_factory=list)
     copyright: Optional[str] = None
+    source_mode: str = "raw_http"
+    was_js_rendered: bool = False
+    likely_js_spa: bool = False
+    html_snapshot_path: Optional[str] = None
+    num_network_requests: int = 0
+    num_external_network_requests: int = 0
+    num_api_endpoints: int = 0
+    found_network_requests: List[str] = field(default_factory=list)
+    found_api_endpoints: List[str] = field(default_factory=list)
 
 
 def check_obfuscated_scripts(
@@ -355,7 +366,52 @@ def find_copyright(soup: BeautifulSoup) -> Optional[str]:
     return None
 
 
-def get_html_body_features(body: str, url: str) -> HtmlBodyFeatures:
+def detect_likely_js_spa(soup: BeautifulSoup) -> bool:
+    """Heuristic signal that a page likely depends on JS rendering."""
+    spa_roots = [
+        "#root",
+        "#app",
+        "#__next",
+        "#__nuxt",
+        "[data-reactroot]",
+        "[ng-app]",
+    ]
+    if any(soup.select(selector) for selector in spa_roots):
+        return True
+
+    text_len = len(soup.get_text(strip=True))
+    scripts_count = len(soup.find_all("script"))
+    has_noscript = bool(soup.find("noscript"))
+    return scripts_count >= 3 and text_len < 200 and has_noscript
+
+
+def is_external_url(url: str, base_domain: str) -> bool:
+    """Return True when URL points outside current page domain."""
+    parsed = urlparse(url)
+    if not parsed.netloc:
+        return False
+    return parsed.netloc != base_domain
+
+
+def detect_api_endpoints(urls: List[str]) -> List[str]:
+    """Return URLs that look like API/JSON endpoints."""
+    api_like = []
+    pattern = re.compile(r"(/api/|/graphql|/rest/|/v\d+/|[?&]format=json)", re.I)
+    for candidate in urls:
+        lowered = candidate.lower()
+        if lowered.endswith(".json") or pattern.search(lowered):
+            api_like.append(candidate)
+    return list(dict.fromkeys(api_like))
+
+
+def get_html_body_features(
+    body: str,
+    url: str,
+    source_mode: str = "raw_http",
+    was_js_rendered: bool = False,
+    html_snapshot_path: Optional[str] = None,
+    network_request_urls: Optional[List[str]] = None,
+) -> HtmlBodyFeatures:
     """Extract HTML body features from the"""
     soup = BeautifulSoup(body, "html.parser")
     base_domain = get_domain_from_url(url)
@@ -391,6 +447,11 @@ def get_html_body_features(body: str, url: str) -> HtmlBodyFeatures:
 
     def _netloc(value: str) -> str:
         return urlparse(value or "").netloc
+    discovered_urls = list(dict.fromkeys(network_request_urls or []))
+    external_discovered = [
+        item for item in discovered_urls if is_external_url(item, base_domain)
+    ]
+    found_api_endpoints = detect_api_endpoints(discovered_urls)
 
     return HtmlBodyFeatures(
         contains_forms=bool(forms),
@@ -516,14 +577,35 @@ def get_html_body_features(body: str, url: str) -> HtmlBodyFeatures:
         found_anchors=[a.attrs for a in anchors],
         found_media=[m.attrs for m in media],
         copyright=find_copyright(soup),
+        source_mode=source_mode,
+        was_js_rendered=was_js_rendered,
+        likely_js_spa=detect_likely_js_spa(soup),
+        html_snapshot_path=html_snapshot_path,
+        num_network_requests=len(discovered_urls),
+        num_external_network_requests=len(external_discovered),
+        num_api_endpoints=len(found_api_endpoints),
+        found_network_requests=discovered_urls,
+        found_api_endpoints=found_api_endpoints,
     )
 
 
 # Example usage:
 if __name__ == "__main__":
-    url = "https://www.example.com"
-    response = requests.get(url, allow_redirects=True, timeout=60)
+    from web2vec.crawlers.extractors import HtmlBodyExtractor
 
-    html_body_features = get_html_body_features(response.text, response.url)
+    url = "https://shop.volvocars.ca"
+    if not config.ssl_verify:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    response = requests.get(
+        url, allow_redirects=True, timeout=60, verify=config.ssl_verify
+    )
+
+    extractor = HtmlBodyExtractor(
+        enable_js_render=True,
+        save_html_snapshot=True,
+        render_wait_seconds=2.0,
+    )
+    html_body_features = extractor.extract_features(response)
 
     print(html_body_features)
+    print(f"Snapshot path: {html_body_features.html_snapshot_path}")

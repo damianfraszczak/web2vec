@@ -1,10 +1,13 @@
 import logging
+import os
+import time
 from dataclasses import asdict, is_dataclass
 from typing import List
 
 from requests import Response as ReqResponse
 from scrapy.http import Response
 
+from web2vec.config import config
 from web2vec.extractors.dns_features import (
     DNSFeatures,
     get_dns_features_cached,
@@ -61,6 +64,7 @@ from web2vec.utils import (
     fetch_url,
     get_domain_from_url,
     is_numerical_type,
+    sanitize_filename,
     transform_value,
 )
 
@@ -93,8 +97,94 @@ class HtmlBodyExtractor(Extractor):
     FEATURE_CLASS = HtmlBodyFeatures
     FEATURE_TYPE = "HTML"
 
+    def __init__(
+        self,
+        enable_js_render: bool = False,
+        save_html_snapshot: bool = False,
+        snapshot_output_dir: str | None = None,
+        render_wait_seconds: float = 2.0,
+    ) -> None:
+        self.enable_js_render = enable_js_render
+        self.save_html_snapshot = save_html_snapshot
+        self.snapshot_output_dir = snapshot_output_dir
+        self.render_wait_seconds = render_wait_seconds
+
+    def _snapshot_dir(self) -> str:
+        return self.snapshot_output_dir or os.path.join(
+            config.crawler_output_path, "html_snapshots"
+        )
+
+    def _save_snapshot(self, html: str, url: str, rendered: bool) -> str | None:
+        try:
+            suffix = "_rendered" if rendered else "_raw"
+            file_name = f"{sanitize_filename(url)}{suffix}.html"
+            output_dir = self._snapshot_dir()
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, file_name)
+            with open(output_path, "w", encoding="utf-8") as handle:
+                handle.write(html)
+            return output_path
+        except Exception as exc:  # noqa
+            logger.warning(f"Could not save HTML snapshot for {url}: {exc}")
+            return None
+
+    def _render_with_selenium(self, url: str) -> str | None:
+        try:
+            from selenium import webdriver
+            from selenium.webdriver.chrome.options import Options
+            from selenium.webdriver.chrome.service import Service
+            from webdriver_manager.chrome import ChromeDriverManager
+        except Exception as exc:  # noqa
+            logger.warning(f"Selenium rendering not available for {url}: {exc}")
+            return None
+
+        driver = None
+        try:
+            options = Options()
+            options.add_argument("--headless=new")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--ignore-certificate-errors")
+            options.add_argument("--allow-insecure-localhost")
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=options)
+            driver.get(url)
+            if self.render_wait_seconds > 0:
+                time.sleep(self.render_wait_seconds)
+            return driver.page_source
+        except Exception as exc:  # noqa
+            logger.warning(f"Selenium rendering failed for {url}: {exc}")
+            return None
+        finally:
+            if driver:
+                driver.quit()
+
     def extract_features(self, response: Response | ReqResponse) -> HtmlBodyFeatures:
-        return get_html_body_features(body=response.text, url=response.url)
+        body = response.text
+        source_mode = "raw_http"
+        was_js_rendered = False
+
+        if self.enable_js_render:
+            rendered_body = self._render_with_selenium(response.url)
+            if rendered_body:
+                body = rendered_body
+                source_mode = "selenium_rendered"
+                was_js_rendered = True
+
+        html_snapshot_path = None
+        if self.save_html_snapshot:
+            html_snapshot_path = self._save_snapshot(
+                html=body, url=response.url, rendered=was_js_rendered
+            )
+
+        return get_html_body_features(
+            body=body,
+            url=response.url,
+            source_mode=source_mode,
+            was_js_rendered=was_js_rendered,
+            html_snapshot_path=html_snapshot_path,
+        )
 
 
 class HttpResponseExtractor(Extractor):

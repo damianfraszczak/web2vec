@@ -46,6 +46,8 @@ def test_whois_recent_domain_indicators():
     assert features.expires_within_7_days is True
     assert features.expires_within_30_days is True
     assert features.is_expired is False
+    assert features.time_domain_activation == features.domain_age_days
+    assert features.time_domain_expiration == features.days_until_expiration
     assert features.domain_age == features.domain_age_days
 
 

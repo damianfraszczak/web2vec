@@ -99,18 +99,19 @@ def get_file_path_for_url(url, directory=None, timeout=86400) -> str:
     return file_name
 
 
-def fetch_url(url, headers=None, ssl_verify=False):
+def fetch_url(url, headers=None, ssl_verify=None):
     """Fetch the given URL and return the response."""
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    verify = config.ssl_verify if ssl_verify is None else ssl_verify
+    if not verify:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     headers = {**DEFAULT_HEADERS, **(headers or {})}
-    session = _get_session()
     try:
-        return session.get(
+        return requests.get(
             url,
             headers=headers,
             timeout=config.api_timeout,
             allow_redirects=True,
-            verify=ssl_verify,
+            verify=verify,
         )
     except requests.RequestException as exc:
         logger.error("HTTP request failed for %s: %s", url, exc)

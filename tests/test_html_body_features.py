@@ -43,3 +43,21 @@ def test_html_body_feature_counts():
     assert features.mouse_over_effect == 1
     assert features.logo_url == "http://cdn.example.com/logo.png"
     assert features.favicon_url == "/favicon.ico"
+
+
+def test_html_body_detects_likely_spa():
+    """Flag page with SPA root markers as likely JS-driven."""
+    spa_doc = """
+    <html>
+      <head><title>SPA</title></head>
+      <body>
+        <div id="root"></div>
+        <script src="/static/js/main.js"></script>
+      </body>
+    </html>
+    """
+    features = get_html_body_features(spa_doc, "https://spa.example.com")
+    assert features.likely_js_spa is True
+    assert features.source_mode == "raw_http"
+    assert features.was_js_rendered is False
+    assert features.html_snapshot_path is None

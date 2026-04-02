@@ -132,3 +132,30 @@ def test_certificate_flatten_handles_tuple_issuer():
     )
     assert features.issuer_common_name == "CertCN"
     assert features.issuer_organization_name == "CertOrg"
+
+
+def test_check_ssl_respects_ssl_verify_config(monkeypatch):
+    """Ensure check_ssl passes verify from global config and toggles warnings."""
+    captured = {"verify": None, "warnings": 0}
+
+    def fake_get(_url, **kwargs):
+        captured["verify"] = kwargs["verify"]
+        return None
+
+    def fake_disable_warnings(_warning_cls):
+        captured["warnings"] += 1
+
+    monkeypatch.setattr(ssl_certification_features.requests, "get", fake_get)
+    monkeypatch.setattr(
+        ssl_certification_features.urllib3, "disable_warnings", fake_disable_warnings
+    )
+
+    monkeypatch.setattr(ssl_certification_features.config, "ssl_verify", True)
+    assert ssl_certification_features.check_ssl("https://example.com") is True
+    assert captured["verify"] is True
+    assert captured["warnings"] == 0
+
+    monkeypatch.setattr(ssl_certification_features.config, "ssl_verify", False)
+    assert ssl_certification_features.check_ssl("https://example.com") is True
+    assert captured["verify"] is False
+    assert captured["warnings"] == 1

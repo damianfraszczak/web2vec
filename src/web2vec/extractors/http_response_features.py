@@ -32,6 +32,7 @@ class HttpResponseFeatures:
     script_to_special_chars_ratio: float = 0.0
     script_to_body_ratio: float = 0.0
     body_to_special_char_ratio: float = 0.0
+    time_response: Optional[float] = None
 
 
 def check_redirects(response: requests.Response) -> bool:
@@ -245,6 +246,11 @@ def get_http_response_features(
         script_to_special_chars_ratio=script_to_special_chars_ratio(response),
         script_to_body_ratio=script_to_body_ratio(response),
         body_to_special_char_ratio=body_to_special_char_ratio(response),
+        time_response=(
+            response.elapsed.total_seconds()
+            if getattr(response, "elapsed", None)
+            else None
+        ),
     )
 
 
