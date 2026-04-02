@@ -117,3 +117,81 @@ def test_store_json_serializes_datetimes(tmp_path):
     target = tmp_path / "data.json"
     utils.store_json({"at": datetime(2024, 1, 1, 0, 0)}, target.as_posix())
     assert '"2024-01-01T00:00:00"' in target.read_text(encoding="utf-8")
+
+
+def test_fetch_url_uses_config_ssl_verify_true(monkeypatch):
+    """Use config.ssl_verify=True by default and keep urllib3 warnings untouched."""
+    monkeypatch.setattr(utils.config, "ssl_verify", True)
+
+    warning_calls = {"count": 0}
+    captured = {}
+
+    def fake_disable_warnings(*_args, **_kwargs):
+        warning_calls["count"] += 1
+
+    def fake_get(url, **kwargs):
+        captured["url"] = url
+        captured["kwargs"] = kwargs
+        return "ok"
+
+    monkeypatch.setattr(utils.urllib3, "disable_warnings", fake_disable_warnings)
+    monkeypatch.setattr(utils.requests, "get", fake_get)
+
+    result = utils.fetch_url("https://example.com", headers={"X-Test": "1"})
+    assert result == "ok"
+    assert warning_calls["count"] == 0
+    assert captured["kwargs"]["verify"] is True
+    assert captured["kwargs"]["allow_redirects"] is True
+    assert captured["kwargs"]["timeout"] == utils.config.api_timeout
+
+
+def test_fetch_url_disables_warning_when_verify_false(monkeypatch):
+    """Disable urllib3 insecure warning when SSL verify is turned off."""
+    monkeypatch.setattr(utils.config, "ssl_verify", False)
+
+    warning_calls = {"count": 0, "warning_cls": None}
+    captured = {}
+
+    def fake_disable_warnings(warning_cls):
+        warning_calls["count"] += 1
+        warning_calls["warning_cls"] = warning_cls
+
+    def fake_get(_url, **kwargs):
+        captured["verify"] = kwargs["verify"]
+        return "ok"
+
+    monkeypatch.setattr(utils.urllib3, "disable_warnings", fake_disable_warnings)
+    monkeypatch.setattr(utils.requests, "get", fake_get)
+
+    assert utils.fetch_url("https://example.com") == "ok"
+    assert warning_calls["count"] == 1
+    assert (
+        warning_calls["warning_cls"] is utils.urllib3.exceptions.InsecureRequestWarning
+    )
+    assert captured["verify"] is False
+
+
+def test_fetch_url_ssl_verify_override(monkeypatch):
+    """Respect explicit ssl_verify argument over config default."""
+    monkeypatch.setattr(utils.config, "ssl_verify", True)
+
+    warning_calls = {"count": 0}
+    captured = {}
+
+    monkeypatch.setattr(
+        utils.urllib3,
+        "disable_warnings",
+        lambda *_args, **_kwargs: warning_calls.__setitem__(
+            "count", warning_calls["count"] + 1
+        ),
+    )
+    monkeypatch.setattr(
+        utils.requests,
+        "get",
+        lambda _url, **kwargs: captured.setdefault("verify", kwargs["verify"]) or "ok",
+    )
+
+    # Force verify=False despite config.ssl_verify=True.
+    utils.fetch_url("https://example.com", ssl_verify=False)
+    assert warning_calls["count"] == 1
+    assert captured["verify"] is False
