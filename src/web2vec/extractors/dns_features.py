@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple
 import dns.exception
 import dns.resolver
 
+from web2vec.config import config
 from web2vec.utils import get_domain_from_url
 
 logger = logging.getLogger(__name__)
@@ -98,11 +99,44 @@ class DNSFeatures:
         return ttl_records[0] if ttl_records else None
 
 
+def _resolve_with_fallback(domain: str, record_type: str) -> dns.resolver.Answer:
+    """
+    Resolve DNS record with UDP first and TCP fallback.
+    This helps in VPN/corporate networks where UDP/53 may be throttled or blocked.
+    """
+    last_error: Optional[Exception] = None
+    lifetime = max(10.0, float(getattr(config, "dns_resolver_timeout", 1)))
+
+    def _call_resolve(*, tcp: bool) -> dns.resolver.Answer:
+        try:
+            return dns.resolver.resolve(domain, record_type, tcp=tcp, lifetime=lifetime)
+        except TypeError:
+            # Backward compatibility for tests/mocks that patch resolve(domain, type).
+            return dns.resolver.resolve(domain, record_type)
+
+    for _attempt in range(2):
+        try:
+            return _call_resolve(tcp=False)
+        except dns.exception.Timeout as exc:
+            last_error = exc
+            try:
+                return _call_resolve(tcp=True)
+            except Exception as tcp_exc:  # noqa
+                last_error = tcp_exc
+                continue
+        except Exception as exc:  # noqa
+            last_error = exc
+            break
+    if last_error:
+        raise last_error
+    raise dns.exception.Timeout("DNS resolution failed without specific exception.")
+
+
 async def _resolve_record(
     domain: str, record_type: str
 ) -> Tuple[str, Optional[dns.resolver.Answer], Optional[Exception]]:
     def _sync_resolve():
-        return dns.resolver.resolve(domain, record_type)
+        return _resolve_with_fallback(domain, record_type)
 
     try:
         answers = await asyncio.to_thread(_sync_resolve)
