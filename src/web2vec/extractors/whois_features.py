@@ -143,21 +143,32 @@ def get_whois_features(domain: str) -> Optional[WhoisFeatures]:
     """Fetch WHOIS data for a given domain."""
     try:
         w = whois.whois(domain)
+
+        normalized_updated_date = WhoisFeatures._normalize_datetime(w.updated_date)
+        normalized_creation_date = WhoisFeatures._normalize_datetime(w.creation_date)
+        normalized_expiration_date = WhoisFeatures._normalize_datetime(
+            w.expiration_date
+        )
+
+        def _ensure_list(value) -> List[str]:
+            if value is None:
+                return []
+            if isinstance(value, (list, tuple, set)):
+                items = [str(item) for item in value if item]
+                return items
+            return [str(value)] if value else []
+
         whois_data = WhoisFeatures(
-            domain_name=(
-                w.domain_name if isinstance(w.domain_name, list) else [w.domain_name]
-            ),
+            domain_name=_ensure_list(w.domain_name),
             registrar=w.registrar,
             whois_server=w.whois_server,
             referral_url=w.referral_url,
-            updated_date=w.updated_date,
-            creation_date=w.creation_date,
-            expiration_date=w.expiration_date,
-            name_servers=(
-                w.name_servers if isinstance(w.name_servers, list) else [w.name_servers]
-            ),
-            status=w.status if isinstance(w.status, list) else [w.status],
-            emails=w.emails if isinstance(w.emails, list) else [w.emails],
+            updated_date=normalized_updated_date,
+            creation_date=normalized_creation_date,
+            expiration_date=normalized_expiration_date,
+            name_servers=_ensure_list(w.name_servers),
+            status=_ensure_list(w.status),
+            emails=_ensure_list(w.emails),
             dnssec=w.dnssec,
             name=w.name,
             org=w.org,

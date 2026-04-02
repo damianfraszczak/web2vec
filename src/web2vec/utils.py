@@ -204,4 +204,51 @@ def transform_value(obj: object) -> object:
         return obj
     if isinstance(obj, datetime):
         return obj.isoformat()
+    if isinstance(obj, str):
+        parsed_date = _try_parse_date_string(obj)
+        return parsed_date if parsed_date is not None else obj
+    if isinstance(obj, dict):
+        normalized = {str(key): transform_value(value) for key, value in obj.items()}
+        return json.dumps(normalized, ensure_ascii=False)
+    if isinstance(obj, (list, tuple, set)):
+        normalized = [transform_value(item) for item in obj]
+        return json.dumps(normalized, ensure_ascii=False)
     return str(obj)
+
+
+def _try_parse_date_string(value: str) -> str | None:
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+
+    ordinal_normalized = re.sub(
+        r"(\d)(st|nd|rd|th)\b", r"\1", cleaned, flags=re.IGNORECASE
+    )
+    iso_candidate = ordinal_normalized.replace("Z", "+00:00")
+    try:
+        return datetime.fromisoformat(iso_candidate).isoformat()
+    except ValueError:
+        pass
+
+    formats = (
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%d-%m-%Y",
+        "%d.%m.%Y",
+        "%d %b %Y",
+        "%d %B %Y",
+        "%d-%b-%Y",
+        "%d-%B-%Y",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S%z",
+    )
+    for fmt in formats:
+        try:
+            parsed = datetime.strptime(ordinal_normalized, fmt)
+            if parsed.time() == datetime.min.time():
+                return parsed.date().isoformat()
+            return parsed.isoformat()
+        except ValueError:
+            continue
+    return None

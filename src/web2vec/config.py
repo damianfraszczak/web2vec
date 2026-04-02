@@ -15,6 +15,7 @@ class Config(BaseSettings):
 
     default_output_path: str = _DEFAULT_PATH
     remote_url_output_path: str = ""
+    resources_output_path: str = ""
     open_page_rank_api_key: str = ""
     brave_search_api_key: str = ""
     api_timeout: int = 60
@@ -23,7 +24,12 @@ class Config(BaseSettings):
     crawler_spider_depth_limit: int = 5
     dns_resolver_timeout: int = 1
 
-    @field_validator("remote_url_output_path", "crawler_output_path", mode="before")
+    @field_validator(
+        "remote_url_output_path",
+        "crawler_output_path",
+        "resources_output_path",
+        mode="before",
+    )
     @classmethod
     def set_correct_path(cls, value: str, info: ValidationInfo):
         data = info.data
@@ -34,6 +40,8 @@ class Config(BaseSettings):
                 return os.path.join(data["default_output_path"], "remote")
             if field_name == "crawler_output_path":
                 return os.path.join(data["default_output_path"], "crawler")
+            if field_name == "resources_output_path":
+                return os.path.join(data["default_output_path"], "resources")
         return value
 
 

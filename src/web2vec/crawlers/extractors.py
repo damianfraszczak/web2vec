@@ -132,8 +132,6 @@ class HtmlBodyExtractor(Extractor):
         try:
             from selenium import webdriver
             from selenium.webdriver.chrome.options import Options
-            from selenium.webdriver.chrome.service import Service
-            from webdriver_manager.chrome import ChromeDriverManager
         except Exception as exc:  # noqa
             logger.warning(f"Selenium rendering not available for {url}: {exc}")
             return None
@@ -147,8 +145,10 @@ class HtmlBodyExtractor(Extractor):
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--ignore-certificate-errors")
             options.add_argument("--allow-insecure-localhost")
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=options)
+            # Use Selenium Manager (built into Selenium 4.6+) to resolve browser driver.
+            # This avoids webdriver-manager issues on Windows (e.g. selecting
+            # THIRD_PARTY_NOTICES.chromedriver instead of chromedriver.exe).
+            driver = webdriver.Chrome(options=options)
             driver.get(url)
             if self.render_wait_seconds > 0:
                 time.sleep(self.render_wait_seconds)

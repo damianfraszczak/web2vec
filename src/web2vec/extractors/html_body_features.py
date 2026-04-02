@@ -447,6 +447,7 @@ def get_html_body_features(
 
     def _netloc(value: str) -> str:
         return urlparse(value or "").netloc
+
     discovered_urls = list(dict.fromkeys(network_request_urls or []))
     external_discovered = [
         item for item in discovered_urls if is_external_url(item, base_domain)
@@ -593,7 +594,7 @@ def get_html_body_features(
 if __name__ == "__main__":
     from web2vec.crawlers.extractors import HtmlBodyExtractor
 
-    url = "https://shop.volvocars.ca"
+    url = "https://www.netflix.com/pl-en/"
     if not config.ssl_verify:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     response = requests.get(
