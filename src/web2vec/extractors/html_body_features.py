@@ -1,12 +1,13 @@
 import re
-from urllib.parse import urlparse
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import requests
 import urllib3
 from bs4 import BeautifulSoup
 
+from web2vec.config import config
 from web2vec.utils import get_domain_from_url
 
 
@@ -450,8 +451,11 @@ if __name__ == "__main__":
     from web2vec.crawlers.extractors import HtmlBodyExtractor
 
     url = "https://shop.volvocars.ca"
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    response = requests.get(url, allow_redirects=True, timeout=60, verify=False)
+    if not config.ssl_verify:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    response = requests.get(
+        url, allow_redirects=True, timeout=60, verify=config.ssl_verify
+    )
 
     extractor = HtmlBodyExtractor(
         enable_js_render=True,

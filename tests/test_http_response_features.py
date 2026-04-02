@@ -1,5 +1,5 @@
-from types import SimpleNamespace
 from datetime import timedelta
+from types import SimpleNamespace
 
 from web2vec.extractors.http_response_features import (
     get_http_response_features,

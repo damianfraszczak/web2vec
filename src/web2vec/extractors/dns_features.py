@@ -67,7 +67,9 @@ class DNSFeatures:
 
         txt_records = [record for record in self.records if record.record_type == "TXT"]
         if txt_records:
-            txt_values = " ".join(" ".join(record.values) for record in txt_records).lower()
+            txt_values = " ".join(
+                " ".join(record.values) for record in txt_records
+            ).lower()
             self.domain_spf = "v=spf1" in txt_values
         else:
             self.domain_spf = None

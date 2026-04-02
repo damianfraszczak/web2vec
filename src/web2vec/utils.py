@@ -86,9 +86,11 @@ def get_file_path_for_url(url, directory=None, timeout=86400) -> str:
     return file_name
 
 
-def fetch_url(url, headers=None, ssl_verify=False):
+def fetch_url(url, headers=None, ssl_verify=None):
     """Fetch the given URL and return the response."""
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    verify = config.ssl_verify if ssl_verify is None else ssl_verify
+    if not verify:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     headers = headers or {}
     headers = {**DEFAULT_HEADERS, **headers}
     return requests.get(
@@ -96,7 +98,7 @@ def fetch_url(url, headers=None, ssl_verify=False):
         headers=headers,
         timeout=config.api_timeout,
         allow_redirects=True,
-        verify=ssl_verify,
+        verify=verify,
     )
 
 

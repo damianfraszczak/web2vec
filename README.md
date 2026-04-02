@@ -417,7 +417,11 @@ export WEB2VEC_CRAWLER_SPIDER_DEPTH_LIMIT=2
 export WEB2VEC_DEFAULT_OUTPUT_PATH=/home/admin/crawler/output
 export WEB2VEC_OPEN_PAGE_RANK_API_KEY=XXXXX
 export WEB2VEC_BRAVE_SEARCH_API_KEY=XXXXX
+export WEB2VEC_SSL_VERIFY=true
 ```
+
+`WEB2VEC_SSL_VERIFY` controls SSL certificate verification for HTTP requests. Default: `true`.  
+When set to `false`, requests run with `verify=False` and urllib3 insecure HTTPS warnings are suppressed.
 ### Crawling websites and extract parameters
 
 ```python

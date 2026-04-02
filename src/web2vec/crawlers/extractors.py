@@ -7,6 +7,7 @@ from typing import List
 from requests import Response as ReqResponse
 from scrapy.http import Response
 
+from web2vec.config import config
 from web2vec.extractors.dns_features import (
     DNSFeatures,
     get_dns_features_cached,
@@ -59,7 +60,6 @@ from web2vec.extractors.whois_features import (
     WhoisFeatures,
     get_whois_features_cached,
 )
-from web2vec.config import config
 from web2vec.utils import (
     fetch_url,
     get_domain_from_url,
