@@ -25,6 +25,11 @@ class DNSFeatures:
     ttl_expires_within_hour: Optional[bool] = field(init=False, default=None)
     ttl_expires_within_day: Optional[bool] = field(init=False, default=None)
     ttl_expires_within_week: Optional[bool] = field(init=False, default=None)
+    qty_ip_resolved: int = field(init=False, default=0)
+    qty_nameservers: int = field(init=False, default=0)
+    qty_mx_servers: int = field(init=False, default=0)
+    ttl_hostname: Optional[int] = field(init=False, default=None)
+    domain_spf: Optional[bool] = field(init=False, default=None)
 
     @property
     def count_ips(self) -> int:
@@ -55,6 +60,19 @@ class DNSFeatures:
         """Populate TTL-based indicators for downstream ML usage."""
         ttl_values = self._address_record_ttls()
         self.min_ttl = min(ttl_values) if ttl_values else None
+        self.qty_ip_resolved = self.count_ips
+        self.qty_nameservers = self.count_name_servers
+        self.qty_mx_servers = self.count_mx_servers
+        self.ttl_hostname = self.extract_ttl
+
+        txt_records = [record for record in self.records if record.record_type == "TXT"]
+        if txt_records:
+            txt_values = " ".join(
+                " ".join(record.values) for record in txt_records
+            ).lower()
+            self.domain_spf = "v=spf1" in txt_values
+        else:
+            self.domain_spf = None
 
         if self.min_ttl is None:
             self.ttl_expires_within_hour = None
