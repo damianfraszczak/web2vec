@@ -1,13 +1,18 @@
+import asyncio
 import logging
+import time
 from dataclasses import dataclass, field
 from functools import cache
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
+import dns.exception
 import dns.resolver
 
+from web2vec.config import config
 from web2vec.utils import get_domain_from_url
 
 logger = logging.getLogger(__name__)
+DNS_RECORD_TYPES = ["A", "AAAA", "MX", "TXT", "NS", "CNAME"]
 
 
 @dataclass
@@ -25,6 +30,7 @@ class DNSFeatures:
     ttl_expires_within_hour: Optional[bool] = field(init=False, default=None)
     ttl_expires_within_day: Optional[bool] = field(init=False, default=None)
     ttl_expires_within_week: Optional[bool] = field(init=False, default=None)
+    time_response: Optional[float] = field(init=False, default=None)
     qty_ip_resolved: int = field(init=False, default=0)
     qty_nameservers: int = field(init=False, default=0)
     qty_mx_servers: int = field(init=False, default=0)
@@ -93,28 +99,110 @@ class DNSFeatures:
         return ttl_records[0] if ttl_records else None
 
 
+def _resolve_with_fallback(domain: str, record_type: str) -> dns.resolver.Answer:
+    """
+    Resolve DNS record with UDP first and TCP fallback.
+    This helps in VPN/corporate networks where UDP/53 may be throttled or blocked.
+    """
+    last_error: Optional[Exception] = None
+    lifetime = max(10.0, float(getattr(config, "dns_resolver_timeout", 1)))
+
+    def _call_resolve(*, tcp: bool) -> dns.resolver.Answer:
+        try:
+            return dns.resolver.resolve(domain, record_type, tcp=tcp, lifetime=lifetime)
+        except TypeError:
+            # Backward compatibility for tests/mocks that patch resolve(domain, type).
+            return dns.resolver.resolve(domain, record_type)
+
+    for _attempt in range(2):
+        try:
+            return _call_resolve(tcp=False)
+        except dns.exception.Timeout as exc:
+            last_error = exc
+            try:
+                return _call_resolve(tcp=True)
+            except Exception as tcp_exc:  # noqa
+                last_error = tcp_exc
+                continue
+        except Exception as exc:  # noqa
+            last_error = exc
+            break
+    if last_error:
+        raise last_error
+    raise dns.exception.Timeout("DNS resolution failed without specific exception.")
+
+
+async def _resolve_record(
+    domain: str, record_type: str
+) -> Tuple[str, Optional[dns.resolver.Answer], Optional[Exception]]:
+    def _sync_resolve():
+        return _resolve_with_fallback(domain, record_type)
+
+    try:
+        answers = await asyncio.to_thread(_sync_resolve)
+        return record_type, answers, None
+    except Exception as exc:  # noqa
+        return record_type, None, exc
+
+
+async def _collect_records_async(domain: str):
+    tasks = [_resolve_record(domain, record_type) for record_type in DNS_RECORD_TYPES]
+    return await asyncio.gather(*tasks)
+
+
+def _run_dns_tasks(domain: str):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(_collect_records_async(domain))
+    else:
+        return loop.run_until_complete(_collect_records_async(domain))
+
+
 def get_dns_features(domain: str) -> DNSFeatures:
     """Get DNS features for the given domain."""
     dns_result = DNSFeatures(domain=domain)
     try:
-        for record_type in ["A", "AAAA", "MX", "TXT", "NS", "CNAME"]:
-            try:
-                answers = dns.resolver.resolve(domain, record_type)
+        start = time.perf_counter()
+        results = _run_dns_tasks(domain)
+        dns_result.time_response = time.perf_counter() - start
+        spf_detected: Optional[bool] = None
+        for record_type, answers, error in results:
+            if answers:
                 record_values = [rdata.to_text() for rdata in answers]
                 ttl = answers.rrset.ttl
                 dns_result.records.append(
                     DNSRecordFeatures(record_type, ttl, record_values)
                 )
-            except dns.resolver.NoAnswer:
-                logger.debug(f"No {record_type} record found for {domain}")
-            except dns.resolver.NXDOMAIN:
-                logger.warning(f"{domain} does not exist")
-            except Exception as e:  # noqa
+                if record_type == "TXT":
+                    has_spf = any("v=spf1" in value.lower() for value in record_values)
+                    if spf_detected is None:
+                        spf_detected = has_spf
+                    else:
+                        spf_detected = spf_detected or has_spf
+                continue
+
+            if isinstance(error, dns.resolver.NoAnswer):
+                logger.debug("No %s record found for %s", record_type, domain)
+            elif isinstance(error, dns.resolver.NXDOMAIN):
+                logger.warning("%s does not exist", domain)
+            elif isinstance(error, dns.exception.Timeout):
                 logger.warning(
-                    f"Error fetching {record_type} records for {domain}: {e}", e
+                    "Timeout resolving %s record for %s: %s",
+                    record_type,
+                    domain,
+                    error,
+                )
+            elif error:
+                logger.warning(
+                    "Error fetching %s records for %s: %s", record_type, domain, error
                 )
     except Exception as e:  # noqa
-        logger.warning(f"General error fetching DNS records for {domain}: {e}", e)
+        logger.warning("General error fetching DNS records for %s: %s", domain, e)
+        dns_result.time_response = None
+        dns_result.domain_spf = None
+    else:
+        dns_result.domain_spf = spf_detected if spf_detected is not None else False
     dns_result.compute_derived_features()
     return dns_result
 

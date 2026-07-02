@@ -43,6 +43,12 @@ def tld_count(string: str) -> int:
     return string.lower().count(f".{tld}") if tld else 0
 
 
+def tld_length(string: str) -> int:
+    """Return the length of the TLD in the given URL."""
+    extracted = tldextract.extract(string)
+    return len(extracted.suffix) if extracted.suffix else 0
+
+
 def url_depth(url):
     """Calculate the depth of the URL."""
     return len([segment for segment in urlparse(url).path.split("/") if segment])
@@ -101,6 +107,7 @@ class URLLexicalFeatures:
     count_dollar_url: int
     count_percent_url: int
     url_length: int
+    tld_length_url: int
     tld_amount_url: int
     count_dot_domain: int
     count_dash_domain: int
@@ -141,6 +148,24 @@ class URLLexicalFeatures:
     count_dollar_directory: int
     count_percent_directory: int
     directory_length: int
+    count_dot_file: int
+    count_dash_file: int
+    count_underscore_file: int
+    count_slash_file: int
+    count_question_file: int
+    count_equals_file: int
+    count_at_file: int
+    count_ampersand_file: int
+    count_exclamation_file: int
+    count_space_file: int
+    count_tilde_file: int
+    count_comma_file: int
+    count_plus_file: int
+    count_asterisk_file: int
+    count_hash_file: int
+    count_dollar_file: int
+    count_percent_file: int
+    file_length: int
     count_dot_parameters: int
     count_dash_parameters: int
     count_underscore_parameters: int
@@ -173,19 +198,16 @@ class URLLexicalFeatures:
     having_digit_in_subdomain: bool = False
     having_special_char_in_subdomain: bool = False
     having_fragment: bool = False
-    having_anchor: bool = False
     entropy_of_url: float = 0.0
     repeated_digits_url: bool = False
     repeated_digits_domain: bool = False
     repeated_digits_directory: bool = False
     repeated_digits_parameters: bool = False
     token_count: int = 0
-    subdomain_count: int = 0
     tld_popularity: int = 0
     suspicious_file_extension: bool = False
     percentage_numeric_chars: float = 0.0
     url_shortened: bool = False
-    server_client_domain: bool = False
 
 
 def get_url_lexical_features(url: str) -> URLLexicalFeatures:
@@ -196,6 +218,7 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
     path = parsed_url.path
     query = parsed_url.query
     directory = "/".join(path.split("/")[:-1])
+    file_name = path.split("/")[-1] if path else ""
     subdomain = tldextract.extract(hostname).subdomain
     subdomain_parts = [part for part in subdomain.split(".") if part]
     average_subdomain_length = (
@@ -238,6 +261,7 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
         count_dollar_url=count_char("$", url),
         count_percent_url=count_char("%", url),
         url_length=len(url),
+        tld_length_url=tld_length(url),
         tld_amount_url=tld_count(url),
         count_dot_domain=count_char(".", domain),
         count_dash_domain=count_char("-", domain),
@@ -278,6 +302,24 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
         count_dollar_directory=count_char("$", directory),
         count_percent_directory=count_char("%", directory),
         directory_length=len(directory),
+        count_dot_file=count_char(".", file_name),
+        count_dash_file=count_char("-", file_name),
+        count_underscore_file=count_char("_", file_name),
+        count_slash_file=count_char("/", file_name),
+        count_question_file=count_char("?", file_name),
+        count_equals_file=count_char("=", file_name),
+        count_at_file=count_char("@", file_name),
+        count_ampersand_file=count_char("&", file_name),
+        count_exclamation_file=count_char("!", file_name),
+        count_space_file=count_char(" ", file_name),
+        count_tilde_file=count_char("~", file_name),
+        count_comma_file=count_char(",", file_name),
+        count_plus_file=count_char("+", file_name),
+        count_asterisk_file=count_char("*", file_name),
+        count_hash_file=count_char("#", file_name),
+        count_dollar_file=count_char("$", file_name),
+        count_percent_file=count_char("%", file_name),
+        file_length=len(file_name),
         count_dot_parameters=count_char(".", query),
         count_dash_parameters=count_char("-", query),
         count_underscore_parameters=count_char("_", query),
@@ -312,21 +354,18 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
         having_digit_in_subdomain=any(char.isdigit() for char in subdomain),
         having_special_char_in_subdomain=bool(re.search(r"[^A-Za-z0-9.-]", subdomain)),
         having_fragment=bool(parsed_url.fragment),
-        having_anchor=bool(parsed_url.fragment),
         entropy_of_url=entropy(url),
         repeated_digits_url=has_repeated_digits(url),
         repeated_digits_domain=has_repeated_digits(hostname),
         repeated_digits_directory=has_repeated_digits(directory),
         repeated_digits_parameters=has_repeated_digits(query),
         token_count=token_count(url),
-        subdomain_count=len(subdomain_parts),
         tld_popularity=1 if tld_suffix in popular_tlds else 0,
         suspicious_file_extension=any(
             path.lower().endswith(ext) for ext in suspicious_extensions
         ),
         percentage_numeric_chars=numeric_chars_ratio(url),
         url_shortened=url_shortening_match is not None,
-        server_client_domain=contains_keywords(domain, ["server", "client"]),
     )
 
     return features

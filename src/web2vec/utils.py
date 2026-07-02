@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import base64
 import ipaddress
 import json
 import logging
@@ -16,6 +19,16 @@ from web2vec.config import config
 logger = logging.getLogger(__name__)
 
 DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0"}
+_SESSION: requests.Session | None = None
+
+
+def _get_session() -> requests.Session:
+    global _SESSION
+    if _SESSION is None:
+        session = requests.Session()
+        session.headers.update(DEFAULT_HEADERS)
+        _SESSION = session
+    return _SESSION
 
 
 def valid_ip(host: str) -> bool:
@@ -91,15 +104,18 @@ def fetch_url(url, headers=None, ssl_verify=None):
     verify = config.ssl_verify if ssl_verify is None else ssl_verify
     if not verify:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    headers = headers or {}
-    headers = {**DEFAULT_HEADERS, **headers}
-    return requests.get(
-        url,
-        headers=headers,
-        timeout=config.api_timeout,
-        allow_redirects=True,
-        verify=verify,
-    )
+    headers = {**DEFAULT_HEADERS, **(headers or {})}
+    try:
+        return requests.get(
+            url,
+            headers=headers,
+            timeout=config.api_timeout,
+            allow_redirects=True,
+            verify=verify,
+        )
+    except requests.RequestException as exc:
+        logger.error("HTTP request failed for %s: %s", url, exc)
+        raise
 
 
 def fetch_file_from_url(url, directory=None, headers=None, timeout=86400) -> str:
@@ -157,6 +173,12 @@ def store_json(data: dict, file_path: str):
         def default(self, obj):
             if isinstance(obj, datetime):
                 return obj.isoformat()
+            if isinstance(obj, (bytes, bytearray)):
+                raw_bytes = bytes(obj)
+                try:
+                    return raw_bytes.decode("utf-8")
+                except UnicodeDecodeError:
+                    return base64.b64encode(raw_bytes).decode("ascii")
             return super().default(obj)
 
     with open(file_path, "w", encoding="utf-8") as f:
@@ -182,4 +204,51 @@ def transform_value(obj: object) -> object:
         return obj
     if isinstance(obj, datetime):
         return obj.isoformat()
+    if isinstance(obj, str):
+        parsed_date = _try_parse_date_string(obj)
+        return parsed_date if parsed_date is not None else obj
+    if isinstance(obj, dict):
+        normalized = {str(key): transform_value(value) for key, value in obj.items()}
+        return json.dumps(normalized, ensure_ascii=False)
+    if isinstance(obj, (list, tuple, set)):
+        normalized = [transform_value(item) for item in obj]
+        return json.dumps(normalized, ensure_ascii=False)
     return str(obj)
+
+
+def _try_parse_date_string(value: str) -> str | None:
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+
+    ordinal_normalized = re.sub(
+        r"(\d)(st|nd|rd|th)\b", r"\1", cleaned, flags=re.IGNORECASE
+    )
+    iso_candidate = ordinal_normalized.replace("Z", "+00:00")
+    try:
+        return datetime.fromisoformat(iso_candidate).isoformat()
+    except ValueError:
+        pass
+
+    formats = (
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%d-%m-%Y",
+        "%d.%m.%Y",
+        "%d %b %Y",
+        "%d %B %Y",
+        "%d-%b-%Y",
+        "%d-%B-%Y",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S%z",
+    )
+    for fmt in formats:
+        try:
+            parsed = datetime.strptime(ordinal_normalized, fmt)
+            if parsed.time() == datetime.min.time():
+                return parsed.date().isoformat()
+            return parsed.isoformat()
+        except ValueError:
+            continue
+    return None

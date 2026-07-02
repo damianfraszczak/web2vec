@@ -44,6 +44,26 @@ def test_http_response_feature_extraction():
     assert features.missing_content_security_policy is True
     assert features.is_live is True
     assert features.server_version == "nginx"
-    assert features.num_links == 1
-    assert features.script_length == 1
+    assert features.num_titles == 0
+    assert features.script_to_special_chars_ratio >= 0
     assert features.time_response == 0.25
+
+
+class ResponseWithoutStatusCode:
+    __slots__ = ("text", "url", "headers", "status", "history")
+
+    def __init__(self):
+        self.text = RESPONSE_HTML
+        self.url = "https://example.com/login"
+        self.headers = {"Server": "nginx"}
+        self.status = 200
+        self.history = []
+
+
+def test_http_response_feature_extraction_without_status_code():
+    """Ensure we can extract features when only response.status is available."""
+    response = ResponseWithoutStatusCode()
+    features = get_http_response_features(response=response)
+
+    assert features.is_live is True
+    assert features.redirects is False

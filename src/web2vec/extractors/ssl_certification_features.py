@@ -74,6 +74,10 @@ class CertificateFeatures:
     trust_message: str
     issuer_common_name: Optional[str] = field(init=False, default=None)
     issuer_organization_name: Optional[str] = field(init=False, default=None)
+    issuer_country_name: Optional[str] = field(init=False, default=None)
+    subject_common_name: Optional[str] = field(init=False, default=None)
+    subject_organization_name: Optional[str] = field(init=False, default=None)
+    subject_country_name: Optional[str] = field(init=False, default=None)
     issuer_is_lets_encrypt: Optional[bool] = field(init=False, default=None)
     issuer_is_free_ca: Optional[bool] = field(init=False, default=None)
     validity_duration_days: Optional[int] = field(init=False, default=None)
@@ -118,10 +122,19 @@ class CertificateFeatures:
         return self.not_before <= target_date <= self.not_after
 
     def _compute_issuer_features(self) -> None:
+        subject_flat = _flatten_name_entries(self.subject)
         issuer_flat = _flatten_name_entries(self.issuer)
+
+        self.subject_common_name = _first_value(subject_flat, ("commonName", "CN"))
+        self.subject_organization_name = _first_value(
+            subject_flat, ("organizationName", "O")
+        )
+        self.subject_country_name = _first_value(subject_flat, ("countryName", "C"))
+
         if not issuer_flat:
             self.issuer_common_name = None
             self.issuer_organization_name = None
+            self.issuer_country_name = None
             self.issuer_is_lets_encrypt = None
             self.issuer_is_free_ca = None
             return
@@ -130,6 +143,7 @@ class CertificateFeatures:
         self.issuer_organization_name = _first_value(
             issuer_flat, ("organizationName", "O")
         )
+        self.issuer_country_name = _first_value(issuer_flat, ("countryName", "C"))
         combined = " ".join(value.lower() for value in issuer_flat.values())
         is_lets_encrypt = "let's encrypt" in combined or "lets encrypt" in combined
         self.issuer_is_lets_encrypt = is_lets_encrypt
@@ -210,9 +224,12 @@ def get_certificate_features(hostname: str) -> CertificateFeatures:
         not_before = datetime.strptime(cert["notBefore"], "%b %d %H:%M:%S %Y %Z")
         not_after = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z")
 
+        subject = _flatten_name_entries(cert.get("subject", {}))
+        issuer = _flatten_name_entries(cert.get("issuer", {}))
+
         return CertificateFeatures(
-            subject=cert.get("subject", {}),
-            issuer=cert.get("issuer", {}),
+            subject=subject,
+            issuer=issuer,
             not_before=not_before,
             not_after=not_after,
             is_valid=is_valid,

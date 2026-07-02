@@ -26,7 +26,6 @@ def test_url_lexical_feature_flags():
     assert features.count_slash_url >= 3
     assert features.domain_entropy > 0
     assert features.number_of_parameters == 2
-    assert features.subdomain_count == 0
     assert features.number_of_subdomains == 0
     assert features.having_fragment is False
     assert features.entropy_of_url > 0

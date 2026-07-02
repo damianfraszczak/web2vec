@@ -1,5 +1,7 @@
 import logging
+import re
 from dataclasses import dataclass
+from datetime import datetime
 from functools import cache
 from typing import Optional
 
@@ -16,7 +18,20 @@ class OpenPageRankFeatures:
 
     domain: str
     page_rank_decimal: Optional[float]
-    updated_date: Optional[str]
+    updated_date: Optional[datetime]
+
+
+def _parse_openpagerank_date(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    cleaned = value.strip()
+    cleaned = re.sub(r"(\d)(st|nd|rd|th)\b", r"\1", cleaned, flags=re.IGNORECASE)
+    for fmt in ("%d %b %Y", "%d %B %Y", "%Y-%m-%d", "%Y/%m/%d"):
+        try:
+            return datetime.strptime(cleaned, fmt)
+        except ValueError:
+            continue
+    return None
 
 
 class OpenPageRankAPI:
@@ -41,7 +56,7 @@ class OpenPageRankAPI:
                 return OpenPageRankFeatures(
                     domain=domain_data["domain"],
                     page_rank_decimal=domain_data.get("page_rank_decimal"),
-                    updated_date=data["last_updated"],
+                    updated_date=_parse_openpagerank_date(data.get("last_updated")),
                 )
             else:
                 logger.warning("No data found for the specified domain.")
