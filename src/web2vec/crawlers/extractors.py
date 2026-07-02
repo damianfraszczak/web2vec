@@ -70,6 +70,38 @@ from web2vec.utils import (
 
 logger = logging.getLogger(__name__)
 
+HTML_HTTP_FALLBACK_PAIRS = (
+    ("HTML_body_length", "HTTP_body_length"),
+    ("HTML_num_links", "HTTP_num_links"),
+    ("HTML_num_images", "HTTP_num_images"),
+    ("HTML_script_length", "HTTP_script_length"),
+    ("HTML_special_characters", "HTTP_special_characters"),
+)
+
+
+def _is_missing_feature_value(value: object) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        norm = value.strip().lower()
+        return norm in {"", "none", "nan", "null", "n/a", "na"}
+    return False
+
+
+def _coalesce_html_from_http(features: dict) -> None:
+    """Fill selected HTML fields from HTTP fallback when HTML value is missing.
+
+    Final dataset keeps only HTML fields for these pairs; HTTP counterparts are removed.
+    """
+    for html_key, http_key in HTML_HTTP_FALLBACK_PAIRS:
+        html_val = features.get(html_key)
+        http_val = features.get(http_key)
+        if _is_missing_feature_value(html_val) and not _is_missing_feature_value(
+            http_val
+        ):
+            features[html_key] = http_val
+        features.pop(http_key, None)
+
 
 class Extractor:
     FEATURE_CLASS = None
@@ -311,12 +343,15 @@ ALL_EXTRACTORS = [
 
 
 def process_extractors(
-    url: str, extractors: List[Extractor], use_only_numerical: bool = False
+    url: str,
+    extractors: List[Extractor],
+    use_only_numerical: bool = False,
+    response: ReqResponse | None = None,
 ) -> dict:
     """Process a list of extractors for a given URL."""
     extractors_result = {}
     try:
-        response = fetch_url(url)
+        response = response or fetch_url(url)
         try:
             response_domain = get_domain_from_url(response.url)
         except Exception:  # noqa
@@ -351,4 +386,5 @@ def process_extractors(
                 )
     except Exception as e:  # noqa
         logger.warning(f"Couldn't reach {url}. {e}")
+    _coalesce_html_from_http(extractors_result)
     return extractors_result

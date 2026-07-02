@@ -198,19 +198,16 @@ class URLLexicalFeatures:
     having_digit_in_subdomain: bool = False
     having_special_char_in_subdomain: bool = False
     having_fragment: bool = False
-    having_anchor: bool = False
     entropy_of_url: float = 0.0
     repeated_digits_url: bool = False
     repeated_digits_domain: bool = False
     repeated_digits_directory: bool = False
     repeated_digits_parameters: bool = False
     token_count: int = 0
-    subdomain_count: int = 0
     tld_popularity: int = 0
     suspicious_file_extension: bool = False
     percentage_numeric_chars: float = 0.0
     url_shortened: bool = False
-    server_client_domain: bool = False
 
 
 def get_url_lexical_features(url: str) -> URLLexicalFeatures:
@@ -357,21 +354,18 @@ def get_url_lexical_features(url: str) -> URLLexicalFeatures:
         having_digit_in_subdomain=any(char.isdigit() for char in subdomain),
         having_special_char_in_subdomain=bool(re.search(r"[^A-Za-z0-9.-]", subdomain)),
         having_fragment=bool(parsed_url.fragment),
-        having_anchor=bool(parsed_url.fragment),
         entropy_of_url=entropy(url),
         repeated_digits_url=has_repeated_digits(url),
         repeated_digits_domain=has_repeated_digits(hostname),
         repeated_digits_directory=has_repeated_digits(directory),
         repeated_digits_parameters=has_repeated_digits(query),
         token_count=token_count(url),
-        subdomain_count=len(subdomain_parts),
         tld_popularity=1 if tld_suffix in popular_tlds else 0,
         suspicious_file_extension=any(
             path.lower().endswith(ext) for ext in suspicious_extensions
         ),
         percentage_numeric_chars=numeric_chars_ratio(url),
         url_shortened=url_shortening_match is not None,
-        server_client_domain=contains_keywords(domain, ["server", "client"]),
     )
 
     return features

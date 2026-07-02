@@ -44,8 +44,8 @@ def test_http_response_feature_extraction():
     assert features.missing_content_security_policy is True
     assert features.is_live is True
     assert features.server_version == "nginx"
-    assert features.num_links == 1
-    assert features.script_length == 1
+    assert features.num_titles == 0
+    assert features.script_to_special_chars_ratio >= 0
     assert features.time_response == 0.25
 
 

@@ -18,7 +18,7 @@ class Config(BaseSettings):
     resources_output_path: str = ""
     open_page_rank_api_key: str = ""
     brave_search_api_key: str = ""
-    api_timeout: int = 60
+    api_timeout: int = 10
     ssl_verify: bool = True
     crawler_output_path: str = ""
     crawler_spider_depth_limit: int = 5
