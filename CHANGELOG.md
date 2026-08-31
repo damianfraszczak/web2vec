@@ -3,6 +3,16 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Changed
+- Open PageRank extractor migrated to the Keywords Everywhere endpoint, the DomCop one returns 403
+
+### Added
+- bulk Open PageRank lookup batching 100 domains per request
+- rank, referring domains, found flag and monthly history in `OpenPageRankFeatures`
+- quota reporting for the Open PageRank monthly domain limit
+- unit tests for the Open PageRank extractor
+
 ## [0.2.0] - 2026-02-12
 ### Added
 - New features for dns, ssl and whois

@@ -340,7 +340,25 @@ class OpenPageRankFeatures:
     domain: str
     page_rank_decimal: Optional[float]
     updated_date: Optional[str]
+    rank: Optional[int] = None
+    referring_domains: Optional[int] = None
+    found: bool = True
+    history: List[OpenPageRankHistoryEntry] = field(default_factory=list)
 ```
+*Note: Open PageRank moved from DomCop to Keywords Everywhere. The old
+`https://openpagerank.com/api/v1.0/getPageRank` endpoint answers 403 for every request, so the extractor now posts
+to `https://openpagerank.keywordseverywhere.com/v1/domains/bulk` with a bearer token. A domain outside the ranking
+is returned with `found=False` and `page_rank_decimal=None`.*
+
+The free tier allows 30 000 domains per month, so prefer the bulk call when scoring many domains at once. It
+deduplicates the input and sends at most 100 domains per request:
+```python
+import web2vec as w2v
+
+features = w2v.get_open_page_rank_features_bulk(["wp.pl", "github.com"])
+print(features["github.com"].page_rank_decimal)
+```
+The remaining quota is logged after every call and is available as `OpenPageRankAPI.last_quota`.
 ### Open Phish
 ```python
 @dataclass

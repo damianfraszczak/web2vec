@@ -16,18 +16,28 @@ def test_open_pagerank_features_success(monkeypatch):
 
     class _FakeResponse:
         status_code = 200
+        headers = {}
 
         def json(self):
             return {
-                "response": [{"domain": "example.com", "page_rank_decimal": 5.5}],
-                "last_updated": "today",
+                "as_of": "today",
+                "count": 1,
+                "results": [
+                    {
+                        "domain": "example.com",
+                        "found": True,
+                        "open_page_rank": 5.5,
+                        "rank": 7,
+                        "referring_domains": 12,
+                    }
+                ],
             }
 
         def raise_for_status(self):
             """Pretend the request succeeded."""
 
     monkeypatch.setattr(
-        open_pagerank_features.requests, "get", lambda *a, **k: _FakeResponse()
+        open_pagerank_features.requests, "post", lambda *a, **k: _FakeResponse()
     )
     monkeypatch.setattr(
         open_pagerank_features.config, "open_page_rank_api_key", "token"
@@ -37,6 +47,9 @@ def test_open_pagerank_features_success(monkeypatch):
     assert result.domain == "example.com"
     assert result.page_rank_decimal == 5.5
     assert result.updated_date == "today"
+    assert result.found is True
+    assert result.rank == 7
+    assert result.referring_domains == 12
 
 
 def test_open_pagerank_features_no_data(monkeypatch):
@@ -44,15 +57,21 @@ def test_open_pagerank_features_no_data(monkeypatch):
 
     class _EmptyResponse:
         status_code = 200
+        headers = {}
 
         def json(self):
-            return {"response": []}
+            return {
+                "as_of": "today",
+                "count": 0,
+                "results": [],
+                "invalid": ["example.com"],
+            }
 
         def raise_for_status(self):
             """Pretend OK."""
 
     monkeypatch.setattr(
-        open_pagerank_features.requests, "get", lambda *a, **k: _EmptyResponse()
+        open_pagerank_features.requests, "post", lambda *a, **k: _EmptyResponse()
     )
     monkeypatch.setattr(
         open_pagerank_features.config, "open_page_rank_api_key", "token"
